@@ -57,6 +57,24 @@ export const appRouter = router({
       })
     ),
 
+  createVisit: employeeProcedure
+    .input(
+      z.object({
+        customerId: z.string().cuid(), // the user.id of the customer
+        note: z.string().min(2, "Write something"),
+        date: z.date().optional(), // defaults to Now if omitted
+      })
+    )
+    .mutation(({ input, ctx }) =>
+      ctx.prisma.visit.create({
+        data: {
+          userId: input.customerId,
+          note: input.note,
+          date: input.date ?? new Date(),
+        },
+      })
+    ),
+
   // you’ll add more procedures (createVisit, listCustomers…) later
 });
 export type AppRouter = typeof appRouter;

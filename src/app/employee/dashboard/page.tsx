@@ -23,6 +23,12 @@ export default function Dashboard() {
           </li>
         ))}
       </ul>
+      <Link
+        href="/employee/add"
+        className="btn px-4 py-2 mb-4 inline-block bg-blue-600 text-white rounded"
+      >
+        + Add entry
+      </Link>
     </main>
   );
 }
