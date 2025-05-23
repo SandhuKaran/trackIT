@@ -4,7 +4,7 @@ export default function Login() {
   async function handle(formData: FormData) {
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
-    await signIn("credentials", { email, password, callbackUrl: "/timeline" });
+    await signIn("credentials", { email, password, callbackUrl: "/" });
   }
   return (
     <form action={handle} className="max-w-sm m-auto p-4 space-y-4">

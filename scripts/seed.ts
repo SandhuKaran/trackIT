@@ -50,6 +50,13 @@ async function main() {
     create: { email: "alice@example.com", password: aliceHash },
   });
 
+  const crewHash = await bcrypt.hash("crewsecret", 10);
+  await prisma.user.upsert({
+    where: { email: "crew@company.com" },
+    update: {},
+    create: { email: "crew@company.com", password: crewHash, role: "EMPLOYEE" },
+  });
+
   // ───────────────────────────────────────────────────────────
   // 2  Insert visit records for each user
   //    skipDuplicates avoids re-inserting if you run seed twice

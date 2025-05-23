@@ -28,18 +28,22 @@ export const authOptions: NextAuthOptions = {
         if (!valid) return null;
 
         // Everything OK — return the user object fields you need
-        return { id: user.id, email: user.email };
+        return { id: user.id, email: user.email, role: user.role };
       },
     }),
   ],
   session: { strategy: "jwt" },
   callbacks: {
     async jwt({ token, user }) {
-      if (user) token.id = user.id;
+      if (user) {
+        token.id = user.id;
+        token.role = user.role as "CUSTOMER" | "EMPLOYEE";
+      }
       return token;
     },
     async session({ session, token }) {
-      if (token.id) session.user.id = token.id as string;
+      if (token?.id) session.user.id = token.id as string;
+      session.user.role = token.role as "CUSTOMER" | "EMPLOYEE";
       return session;
     },
   },
