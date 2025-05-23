@@ -29,6 +29,9 @@ export default function Dashboard() {
       >
         + Add entry
       </Link>
+      <Link href="/employee/date" className="underline text-blue-600 ml-3">
+        View by date
+      </Link>
     </main>
   );
 }

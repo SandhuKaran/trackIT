@@ -1,6 +1,7 @@
 import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
 import { z } from "zod";
+import { startOfDay, endOfDay } from "date-fns";
 import type { Context } from "./context";
 
 const t = initTRPC.context<Context>().create({ transformer: superjson });
@@ -72,6 +73,23 @@ export const appRouter = router({
           note: input.note,
           date: input.date ?? new Date(),
         },
+      })
+    ),
+
+  visitsByDate: employeeProcedure
+    .input(z.object({ date: z.date() }))
+    .query(({ input, ctx }) =>
+      ctx.prisma.visit.findMany({
+        where: {
+          date: {
+            gte: startOfDay(input.date),
+            lt: endOfDay(input.date),
+          },
+        },
+        include: {
+          user: { select: { email: true } }, // to show whose lawn
+        },
+        orderBy: { date: "desc" },
       })
     ),
 
