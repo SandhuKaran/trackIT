@@ -2,6 +2,7 @@
 import { trpc } from "@/lib/trpc/client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { uploadImage } from "@/lib/cloudinaryUpload";
 
 export default function AddEntry() {
   const router = useRouter();
@@ -12,8 +13,21 @@ export default function AddEntry() {
 
   const [customerId, setCustomerId] = useState("");
   const [note, setNote] = useState("");
+  const [file, setFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   if (isLoading) return <p className="p-4">Loading…</p>;
+
+  async function handleSubmit() {
+    let photoUrl: string | undefined;
+    console.log("file state is", file);
+    if (file) {
+      setUploading(true);
+      photoUrl = await uploadImage(file); // 🔼 send to Cloudinary
+      setUploading(false);
+    }
+    createVisit.mutate({ customerId, note, photoUrl });
+  }
 
   return (
     <main className="p-6 max-w-lg m-auto space-y-4">
@@ -41,13 +55,28 @@ export default function AddEntry() {
         onChange={(e) => setNote(e.target.value)}
       />
 
+      {/* Photo upload */}
+      <input
+        type="file"
+        accept="image/*"
+        className="input"
+        onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+      />
+
       {/* Submit */}
       <button
+        type="button"
         className="btn w-full"
-        disabled={!customerId || note.length < 2 || createVisit.isLoading}
-        onClick={() => createVisit.mutate({ customerId, note })}
+        disabled={
+          !customerId || note.length < 2 || createVisit.isLoading || uploading // ← block click while uploading
+        }
+        onClick={handleSubmit}
       >
-        {createVisit.isLoading ? "Adding…" : "Add entry"}
+        {uploading
+          ? "Uploading…"
+          : createVisit.isLoading
+          ? "Saving…"
+          : "Add entry"}
       </button>
 
       {createVisit.error && (

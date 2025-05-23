@@ -23,7 +23,11 @@ export default function CustomerTimeline() {
             </p>
             <p>{v.note}</p>
             {v.photoUrl && (
-              <img src={v.photoUrl} alt="" className="h-24 mt-2 rounded" />
+              <img
+                src={v.photoUrl.replace("/upload/", "/upload/w_300,c_fill/")}
+                alt=""
+                className="h-24 mt-2 rounded"
+              />
             )}
           </li>
         ))}

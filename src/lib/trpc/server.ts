@@ -63,6 +63,7 @@ export const appRouter = router({
       z.object({
         customerId: z.string().cuid(), // the user.id of the customer
         note: z.string().min(2, "Write something"),
+        photoUrl: z.string().url().optional(),
         date: z.date().optional(), // defaults to Now if omitted
       })
     )
@@ -71,6 +72,7 @@ export const appRouter = router({
         data: {
           userId: input.customerId,
           note: input.note,
+          photoUrl: input.photoUrl ?? null,
           date: input.date ?? new Date(),
         },
       })

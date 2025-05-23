@@ -31,7 +31,11 @@ export default async function Timeline() {
             </p>
             <p>{v.note}</p>
             {v.photoUrl && (
-              <img src={v.photoUrl} alt="" className="h-24 rounded mt-2" />
+              <img
+                src={v.photoUrl.replace("/upload/", "/upload/w_300,c_fill/")}
+                alt=""
+                className="h-24 mt-2 rounded"
+              />
             )}
           </li>
         ))}
