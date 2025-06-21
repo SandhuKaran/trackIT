@@ -1,5 +1,6 @@
 // src/app/layout.tsx
 import TRPCProvider from "@/components/TRPCProvider";
+import "./globals.css";
 
 export default function RootLayout({
   children,

@@ -1,3 +1,4 @@
+// page.tsx
 import { smartRedirect } from "@/lib/redirectAfterLogin";
 
 export default async function Home() {
