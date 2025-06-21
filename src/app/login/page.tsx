@@ -8,9 +8,11 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
+  CardDescription,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
 
 export default function LoginPage() {
@@ -30,29 +32,42 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-green-50 to-green-100 p-4">
+    <div className="flex min-h-screen items-center justify-center bg-black text-white dark p-4">
       <Card className="w-full max-w-md shadow-xl">
-        <CardHeader>
-          <CardTitle className="text-center text-2xl font-semibold">
-            Landscaping Portal Login
-          </CardTitle>
+        <CardHeader className="space-y-1">
+          <CardTitle className="text-2xl">Login to your account</CardTitle>
+          <CardDescription>
+            Enter your email below to login to your account
+          </CardDescription>
         </CardHeader>
 
         <form action={handle}>
-          <CardContent className="space-y-4">
-            <Input name="email" type="email" placeholder="Email" required />
-            <Input
-              name="password"
-              type="password"
-              placeholder="Password"
-              required
-            />
+          <CardContent className="grid gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                name="email"
+                id="email"
+                type="email"
+                placeholder="m@example.com"
+                required
+              />
+            </div>
+            <div className="grid gap-2">
+              <div className="flex items-center">
+                <Label htmlFor="password">Password</Label>
+                {/* Forgot password button added back */}
+              </div>
+              <Input name="password" id="password" type="password" required />
+            </div>
+            {/* Added a div for spacing between the password field and the buttons */}
+            <div className="pt-6" /> {/* Adjust pt-x for more/less space */}
           </CardContent>
 
-          <CardFooter>
+          <CardFooter className="flex flex-col gap-2">
             <Button className="w-full" type="submit" disabled={isPending}>
               {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Sign in
+              Login
             </Button>
           </CardFooter>
         </form>
