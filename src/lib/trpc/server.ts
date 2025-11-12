@@ -3,6 +3,7 @@ import superjson from "superjson";
 import { z } from "zod";
 import { startOfDay, endOfDay } from "date-fns";
 import type { Context } from "./context";
+import bcrypt from "bcryptjs";
 
 const t = initTRPC.context<Context>().create({ transformer: superjson });
 
@@ -103,6 +104,43 @@ export const appRouter = router({
         orderBy: { date: "desc" },
       })
     ),
+
+  createCustomer: employeeProcedure
+    .input(
+      z.object({
+        name: z.string().min(2, "Name is too short"),
+        email: z.string().email("Invalid email"),
+        password: z.string().min(8, "Password must be at least 8 characters"),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      // 1. Check if user already exists
+      const existingUser = await ctx.prisma.user.findUnique({
+        where: { email: input.email },
+      });
+
+      if (existingUser) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "A user with this email already exists.",
+        });
+      }
+
+      // 2. Hash the password
+      const hashedPassword = await bcrypt.hash(input.password, 10);
+
+      // 3. Create the new customer
+      const newUser = await ctx.prisma.user.create({
+        data: {
+          name: input.name,
+          email: input.email,
+          password: hashedPassword,
+          role: "CUSTOMER",
+        },
+      });
+
+      return newUser;
+    }),
 
   // you’ll add more procedures (createVisit, listCustomers…) later
 });

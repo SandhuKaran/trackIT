@@ -50,7 +50,12 @@ export default function Dashboard() {
 
         {/* --- Customer List & Search --- */}
         <div className="mt-8">
-          <h2 className="text-xl font-semibold mb-4">Customers</h2>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold">Customers</h2>
+            <Button asChild size="sm">
+              <Link href="/employee/add-customer">+ Add Customer</Link>
+            </Button>
+          </div>
 
           {/* Search Input */}
           <div className="relative mb-4">
