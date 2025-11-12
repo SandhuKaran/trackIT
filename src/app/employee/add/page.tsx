@@ -4,6 +4,28 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { uploadImage } from "@/lib/cloudinaryUpload";
 
+// 💡 FIX: Import all the shadcn/ui components we need
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Loader2 } from "lucide-react"; // 💡 For the loading spinner
+
 export default function AddEntry() {
   const router = useRouter();
   const { data: customers, isLoading } = trpc.listCustomers.useQuery();
@@ -16,7 +38,14 @@ export default function AddEntry() {
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
 
-  if (isLoading) return <p className="p-4">Loading…</p>;
+  // 💡 FIX: We can wrap the loading state in the dark theme
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-black text-white dark p-4">
+        <p>Loading customers...</p>
+      </div>
+    );
+  }
 
   async function handleSubmit() {
     let photoUrl: string | undefined;
@@ -30,58 +59,90 @@ export default function AddEntry() {
   }
 
   return (
-    <main className="p-6 max-w-lg m-auto space-y-4">
-      <h1 className="text-xl font-semibold">Add visit entry</h1>
+    // 💡 FIX: Wrapper div for dark theme and centering
+    <div className="min-h-screen bg-black text-white dark flex items-center justify-center p-4">
+      <Card className="w-full max-w-lg shadow-xl">
+        <CardHeader>
+          <CardTitle className="text-2xl">Add Visit Entry</CardTitle>
+          <CardDescription>Log a new visit for a customer.</CardDescription>
+        </CardHeader>
 
-      {/* Customer dropdown */}
-      <select
-        className="input w-full"
-        value={customerId}
-        onChange={(e) => setCustomerId(e.target.value)}
-      >
-        <option value="">Select customer</option>
-        {customers?.map((c) => (
-          <option key={c.id} value={c.id}>
-            {c.email}
-          </option>
-        ))}
-      </select>
+        {/* 💡 FIX: CardContent now holds our form fields */}
+        <CardContent className="grid gap-4">
+          {/* 💡 FIX: Customer dropdown (using grid gap-2 like login) */}
+          <div className="grid gap-2">
+            <Label htmlFor="customer-select">Customer</Label>
+            {/* The new Select component. It hooks into state perfectly. */}
+            <Select value={customerId} onValueChange={setCustomerId}>
+              <SelectTrigger id="customer-select" className="w-full">
+                <SelectValue placeholder="Select a customer" />
+              </SelectTrigger>
+              <SelectContent>
+                {customers?.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.name} ({c.email})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-      {/* Note textarea */}
-      <textarea
-        className="input w-full h-24"
-        placeholder="Work done, comments…"
-        value={note}
-        onChange={(e) => setNote(e.target.value)}
-      />
+          {/* 💡 FIX: Note textarea */}
+          <div className="grid gap-2">
+            <Label htmlFor="note-textarea">Work Notes</Label>
+            <Textarea
+              id="note-textarea"
+              className="h-24"
+              placeholder="Work done, comments..."
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+            />
+          </div>
 
-      {/* Photo upload */}
-      <input
-        type="file"
-        accept="image/*"
-        className="input"
-        onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-      />
+          {/* 💡 FIX: Photo upload */}
+          <div className="grid gap-2">
+            <Label htmlFor="photo-upload">Photo (Optional)</Label>
+            <Input
+              id="photo-upload"
+              type="file"
+              accept="image/*"
+              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+            />
+          </div>
+        </CardContent>
 
-      {/* Submit */}
-      <button
-        type="button"
-        className="btn w-full"
-        disabled={
-          !customerId || note.length < 2 || createVisit.isLoading || uploading // ← block click while uploading
-        }
-        onClick={handleSubmit}
-      >
-        {uploading
-          ? "Uploading…"
-          : createVisit.isLoading
-          ? "Saving…"
-          : "Add entry"}
-      </button>
+        <CardFooter className="flex flex-col gap-2">
+          {/* 💡 FIX: Submit button */}
+          <Button
+            type="button"
+            className="w-full"
+            disabled={
+              !customerId ||
+              note.length < 2 ||
+              createVisit.isPending ||
+              uploading
+            }
+            onClick={handleSubmit}
+          >
+            {/* 💡 FIX: Added loading spinner icon */}
+            {uploading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Uploading...
+              </>
+            ) : createVisit.isPending ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...
+              </>
+            ) : (
+              "Add Entry"
+            )}
+          </Button>
 
-      {createVisit.error && (
-        <p className="text-red-600">{createVisit.error.message}</p>
-      )}
-    </main>
+          {createVisit.error && (
+            <p className="text-red-600">{createVisit.error.message}</p>
+          )}
+        </CardFooter>
+      </Card>
+    </div>
   );
 }

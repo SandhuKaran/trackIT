@@ -1,37 +1,99 @@
 "use client";
 import { trpc } from "@/lib/trpc/client";
 import Link from "next/link";
+import { useState } from "react"; // For search
+import { Loader2, Search } from "lucide-react"; // For loading and search icons
+
+// Import all our shadcn components
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 export default function Dashboard() {
   const { data: customers, isLoading } = trpc.listCustomers.useQuery();
+  const [searchTerm, setSearchTerm] = useState(""); // State for the search input
 
-  if (isLoading) return <p className="p-4">Loading…</p>;
+  // Filter customers based on the search term
+  const filteredCustomers = customers?.filter(
+    (c) =>
+      c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      c.email.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Styled loading state
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-black text-white dark p-4">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
 
   return (
-    <main className="p-6 max-w-lg m-auto">
-      <h1 className="text-xl font-semibold mb-4">Customers</h1>
-      <ul className="space-y-2">
-        {customers?.map((c) => (
-          <li key={c.id} className="border rounded p-3 flex justify-between">
-            <span>{c.email}</span>
-            <Link
-              href={`/employee/customer/${c.id}`}
-              className="text-blue-600 underline"
-            >
-              View
-            </Link>
-          </li>
-        ))}
-      </ul>
-      <Link
-        href="/employee/add"
-        className="btn px-4 py-2 mb-4 inline-block bg-blue-600 text-white rounded"
-      >
-        + Add entry
-      </Link>
-      <Link href="/employee/date" className="underline text-blue-600 ml-3">
-        View by date
-      </Link>
-    </main>
+    // Dark theme wrapper
+    <div className="min-h-screen bg-black text-white dark">
+      <main className="p-4 max-w-lg m-auto">
+        <h1 className="text-2xl font-semibold text-center pt-6 mb-6">
+          Employee Dashboard
+        </h1>
+
+        {/* --- Action Buttons --- */}
+        {/* We group the main actions at the top */}
+        <div className="grid grid-cols-2 gap-4">
+          <Button asChild className="w-full">
+            <Link href="/employee/add">+ Add New Visit</Link>
+          </Button>
+          <Button asChild variant="outline" className="w-full">
+            <Link href="/employee/date">View by Date</Link>
+          </Button>
+        </div>
+
+        {/* --- Customer List & Search --- */}
+        <div className="mt-8">
+          <h2 className="text-xl font-semibold mb-4">Customers</h2>
+
+          {/* Search Input */}
+          <div className="relative mb-4">
+            <Search className="absolute left-2.5 top-2.5 h-5 w-5 text-gray-400" />
+            <Input
+              type="search"
+              placeholder="Search by name or email..."
+              className="pl-10" // Padding to make room for the icon
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+
+          {/* Customer List */}
+          <div className="space-y-3">
+            {filteredCustomers?.map((c) => (
+              <Card key={c.id} className="shadow-xl">
+                {/* We use p-4 for a tighter, list-item feel */}
+                <CardContent className="p-4 flex justify-between items-center">
+                  <div className="flex flex-col">
+                    <span className="font-medium">{c.name}</span>
+                    <span className="text-sm text-gray-400">{c.email}</span>
+                  </div>
+                  <Button asChild variant="ghost" size="sm">
+                    <Link href={`/employee/customer/${c.id}`}>View</Link>
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+
+            {/* Styled "empty" state */}
+            {filteredCustomers?.length === 0 && (
+              <Card>
+                <CardContent>
+                  <p className="pt-6 text-center text-gray-400">
+                    No customers found.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </div>
+      </main>
+    </div>
   );
 }

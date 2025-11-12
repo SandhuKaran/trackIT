@@ -1,6 +1,7 @@
 "use client";
 
-import { useTransition } from "react";
+import { useTransition, useState } from "react"; // 1: Import useState
+import { useRouter } from "next/navigation"; // 2: Import useRouter
 import { signIn } from "next-auth/react";
 import {
   Card,
@@ -17,17 +18,31 @@ import { Loader2 } from "lucide-react";
 
 export default function LoginPage() {
   const [isPending, startTransition] = useTransition();
+  const router = useRouter(); // 3: Get the router
+  const [error, setError] = useState<string | null>(null); // 4: Add error state
 
   async function handle(formData: FormData) {
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
 
+    setError(null); // Clear any old errors
+
     startTransition(async () => {
-      await signIn("credentials", {
+      // 5: Get the 'result' from signIn
+      const result = await signIn("credentials", {
         email,
         password,
-        callbackUrl: "/",
+        redirect: false, // 6: Tell NextAuth NOT to redirect
       });
+
+      // 7: Check the result
+      if (result && !result.ok) {
+        // We got an error, show it
+        setError("Sign in failed. Check the details you provided are correct.");
+      } else {
+        // Success! Manually redirect to the callbackUrl
+        router.push("/");
+      }
     });
   }
 
@@ -41,8 +56,16 @@ export default function LoginPage() {
           </CardDescription>
         </CardHeader>
 
+        {/* 8: Render the error message */}
+        {error && (
+          <div className="mx-6 p-3 bg-red-900/50 text-red-100 border border-red-800 rounded-md">
+            {error}
+          </div>
+        )}
+
         <form action={handle}>
-          <CardContent className="grid gap-4">
+          <CardContent className="grid gap-4 pt-6">
+            {/* ... (rest of your form is perfect) ... */}
             <div className="grid gap-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -56,12 +79,10 @@ export default function LoginPage() {
             <div className="grid gap-2">
               <div className="flex items-center">
                 <Label htmlFor="password">Password</Label>
-                {/* Forgot password button added back */}
               </div>
               <Input name="password" id="password" type="password" required />
             </div>
-            {/* Added a div for spacing between the password field and the buttons */}
-            <div className="pt-6" /> {/* Adjust pt-x for more/less space */}
+            <div className="pt-6" />
           </CardContent>
 
           <CardFooter className="flex flex-col gap-2">

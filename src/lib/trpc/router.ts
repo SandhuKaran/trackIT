@@ -1,5 +1,4 @@
 import { publicProcedure, router } from "./server";
-import { prisma } from "@/lib/prisma";
 import { TRPCError } from "@trpc/server";
 
 export const appRouter = router({

@@ -45,7 +45,7 @@ export const appRouter = router({
   listCustomers: employeeProcedure.query(({ ctx }) =>
     ctx.prisma.user.findMany({
       where: { role: "CUSTOMER" },
-      select: { id: true, email: true },
+      select: { id: true, email: true, name: true },
     })
   ),
 
@@ -55,6 +55,15 @@ export const appRouter = router({
       ctx.prisma.visit.findMany({
         where: { userId: input.customerId },
         orderBy: { date: "desc" },
+      })
+    ),
+
+  customerById: employeeProcedure
+    .input(z.object({ id: z.string() })) // It takes a single 'id' string
+    .query(({ input, ctx }) =>
+      ctx.prisma.user.findUnique({
+        where: { id: input.id, role: "CUSTOMER" }, // Find by ID and ensure they're a customer
+        select: { id: true, email: true, name: true }, // Only return the data we need
       })
     ),
 
@@ -89,7 +98,7 @@ export const appRouter = router({
           },
         },
         include: {
-          user: { select: { email: true } }, // to show whose lawn
+          user: { select: { email: true, name: true } }, // to show whose lawn
         },
         orderBy: { date: "desc" },
       })

@@ -1,70 +1,62 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
-// const prisma = new PrismaClient();
-
-// async function main() {
-//   const pwHash = await bcrypt.hash("secret123", 10);
-
-//   const karan = await prisma.user.upsert({
-//     where: { email: "karan@example.com" },
-//     update: {},
-//     create: { email: "karan@example.com", password: pwHash },
-//   });
-
-//   await prisma.visit.createMany({
-//     data: [
-//       {
-//         date: new Date("2025-05-13"),
-//         note: "Weekly grass cutting, hedge trim, edging. Signed by Alice",
-//         userId: karan.id,
-//       },
-//       {
-//         date: new Date("2025-05-25"),
-//         note: "Weed spray scheduled (weather permitting)",
-//         userId: karan.id,
-//       },
-//     ],
-//   });
-// }
-// main().then(() => prisma.$disconnect());
-
 const prisma = new PrismaClient();
 
 async function main() {
+  console.log("🌱 Starting seed script..."); // 👈 ADDED LOG
+
   // ───────────────────────────────────────────────────────────
   // 1  Create / update the two users with hashed passwords
   // ───────────────────────────────────────────────────────────
+  console.log("Hashing passwords..."); // 👈 ADDED LOG
   const karanHash = await bcrypt.hash("karan", 10);
   const aliceHash = await bcrypt.hash("alice", 10);
+  const crewHash = await bcrypt.hash("crewsecret", 10);
 
+  console.log("Creating users..."); // 👈 ADDED LOG
   const karan = await prisma.user.upsert({
     where: { email: "karan@example.com" },
-    update: {},
-    create: { email: "karan@example.com", password: karanHash },
+    update: { name: "Karan" },
+    create: {
+      email: "karan@example.com",
+      password: karanHash,
+      name: "Karan",
+    },
   });
+  console.log("Created karan:", karan); // 👈 ADDED LOG
 
   const alice = await prisma.user.upsert({
     where: { email: "alice@example.com" },
-    update: {},
-    create: { email: "alice@example.com", password: aliceHash },
+    update: { name: "Alice" },
+    create: {
+      email: "alice@example.com",
+      password: aliceHash,
+      name: "Alice",
+    },
   });
+  console.log("Created alice:", alice); // 👈 ADDED LOG
 
-  const crewHash = await bcrypt.hash("crewsecret", 10);
-  await prisma.user.upsert({
+  const crew = await prisma.user.upsert({
     where: { email: "crew@company.com" },
-    update: {},
-    create: { email: "crew@company.com", password: crewHash, role: "EMPLOYEE" },
+    update: { name: "Crew" },
+    create: {
+      email: "crew@company.com",
+      password: crewHash,
+      role: "EMPLOYEE",
+      name: "Crew",
+    },
   });
+  console.log("Created crew:", crew); // 👈 ADDED LOG
 
   // ───────────────────────────────────────────────────────────
   // 2  Insert visit records for each user
-  //    skipDuplicates avoids re-inserting if you run seed twice
   // ───────────────────────────────────────────────────────────
+  console.log("Creating visits..."); // 👈 ADDED LOG
   await prisma.visit.createMany({
     skipDuplicates: true,
     data: [
-      // Karan’s visits
+      // ... (your visit data) ...
       {
         date: new Date("2025-05-13"),
         note: "Weekly grass cutting, hedge trim, edging. Signed by Alice",
@@ -75,8 +67,6 @@ async function main() {
         note: "Weed spray scheduled (weather permitting)",
         userId: karan.id,
       },
-
-      // Alice’s visits
       {
         date: new Date("2025-05-14"),
         note: "Spring cleanup and lawn dethatching. Signed by Bob",
@@ -89,12 +79,16 @@ async function main() {
       },
     ],
   });
+  console.log("Visits created."); // 👈 ADDED LOG
 }
 
 main()
-  .then(() => prisma.$disconnect())
+  .then(async () => {
+    console.log("✅ Seed script finished successfully."); // 👈 ADDED LOG
+    await prisma.$disconnect();
+  })
   .catch(async (err) => {
-    console.error(err);
+    console.error("❌ Error in seed script:", err); // 👈 ADDED LOG
     await prisma.$disconnect();
     process.exit(1);
   });
