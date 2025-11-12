@@ -10,7 +10,10 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
 export default function Dashboard() {
-  const { data: customers, isLoading } = trpc.listCustomers.useQuery();
+  const { data: customers, isLoading: isLoadingCustomers } =
+    trpc.listCustomers.useQuery();
+  const { data: feedbacks, isLoading: isLoadingFeedbacks } =
+    trpc.getRecentFeedbacks.useQuery();
   const [searchTerm, setSearchTerm] = useState(""); // State for the search input
 
   // Filter customers based on the search term
@@ -21,7 +24,7 @@ export default function Dashboard() {
   );
 
   // Styled loading state
-  if (isLoading) {
+  if (isLoadingCustomers || isLoadingFeedbacks) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-black text-white dark p-4">
         <Loader2 className="h-8 w-8 animate-spin" />
@@ -92,6 +95,52 @@ export default function Dashboard() {
                 <CardContent>
                   <p className="pt-6 text-center text-gray-400">
                     No customers found.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </div>
+        <div className="mt-10">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold">Recent Feedback</h2>
+          </div>
+          <div className="space-y-3">
+            {/* We map over the new `feedbacks` data */}
+            {feedbacks?.map((fb) => (
+              // 👇 FIX 2: The link must now use the NESTED visit.userId
+              <Link
+                href={`/employee/customer/${fb.visit.userId}`}
+                key={fb.id} // 👈 Use the feedback's ID for the key
+                className="block"
+              >
+                <Card className="shadow-xl hover:bg-gray-900 transition-colors">
+                  <CardContent className="p-4">
+                    {/* 👇 FIX 3: The feedback text is directly on the object */}
+                    <p className="italic text-gray-200">{fb.text}</p>
+                    <div className="flex justify-between items-center mt-3 text-sm">
+                      {/* 👇 FIX 4: The user name is NESTED */}
+                      <span className="font-semibold text-white">
+                        - {fb.visit.user.name}
+                      </span>
+                      {/* 👇 FIX 5: The visit date is NESTED */}
+                      <span className="text-gray-400">
+                        {new Intl.DateTimeFormat("en-CA", {
+                          dateStyle: "medium",
+                        }).format(new Date(fb.visit.date))}
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+
+            {/* Empty state for feedback */}
+            {feedbacks?.length === 0 && (
+              <Card>
+                <CardContent>
+                  <p className="pt-6 text-center text-gray-400">
+                    No recent feedback.
                   </p>
                 </CardContent>
               </Card>

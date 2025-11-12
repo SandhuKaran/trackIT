@@ -5,12 +5,9 @@ import { createContext } from "@/lib/trpc/context";
 import { appRouter } from "@/lib/trpc/server"; // This should be src/lib/trpc/router
 
 // Import Card components
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+
+import { VisitCard } from "@/components/ui/VisitCard";
 
 export default async function Timeline() {
   const session = await getServerSession(authOptions);
@@ -35,43 +32,20 @@ export default async function Timeline() {
 
         {/* Replaced <ul> with a <div> and added more spacing */}
         <div className="space-y-4">
-          {visits.map((v) => (
-            // Replaced <li> with <Card>
-            <Card key={v.id} className="shadow-xl">
-              <CardHeader>
-                {/* Placed the date in the header as a description */}
-                <CardDescription>
-                  {new Intl.DateTimeFormat("en-CA", {
-                    dateStyle: "medium",
-                    timeStyle: "short",
-                  }).format(new Date(v.date))}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* The note text */}
-                <p>{v.note}</p>
+          {/* Render the new client component instead of the raw card */}
+          {visits.map((visit) => (
+            <VisitCard key={visit.id} visit={visit} />
+          ))}
 
-                {/* Clickable, full-width image */}
-                {v.photoUrl && (
-                  <a
-                    href={v.photoUrl} // <-- The link is the FULL-RES original image
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block rounded-md overflow-hidden" // Makes the link a block for layout
-                  >
-                    <img
-                      src={v.photoUrl.replace(
-                        "/upload/",
-                        "/upload/w_400,c_fill/" // <-- Thumbnail (made it a bit larger)
-                      )}
-                      alt="Visit photo" // <-- Added alt text for accessibility
-                      className="w-full h-auto object-cover" // Ensures image fills the card width
-                    />
-                  </a>
-                )}
+          {visits.length === 0 && (
+            <Card>
+              <CardContent>
+                <p className="pt-6 text-center text-gray-400">
+                  You have no visits logged.
+                </p>
               </CardContent>
             </Card>
-          ))}
+          )}
         </div>
       </main>
     </div>

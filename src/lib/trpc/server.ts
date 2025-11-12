@@ -40,6 +40,9 @@ export const appRouter = router({
     return ctx.prisma.visit.findMany({
       where: { userId },
       orderBy: { date: "desc" },
+      include: {
+        feedback: true,
+      },
     });
   }),
 
@@ -56,6 +59,9 @@ export const appRouter = router({
       ctx.prisma.visit.findMany({
         where: { userId: input.customerId },
         orderBy: { date: "desc" },
+        include: {
+          feedback: true,
+        },
       })
     ),
 
@@ -100,6 +106,7 @@ export const appRouter = router({
         },
         include: {
           user: { select: { email: true, name: true } }, // to show whose lawn
+          feedback: true,
         },
         orderBy: { date: "desc" },
       })
@@ -142,6 +149,55 @@ export const appRouter = router({
       return newUser;
     }),
 
-  // you’ll add more procedures (createVisit, listCustomers…) later
+  submitFeedback: protectedProcedure
+    .input(
+      z.object({
+        visitId: z.string().cuid(),
+        feedback: z.string().min(3, "Feedback is too short"),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      // 1. Security Check: Does this visit exist and belong to the user?
+      const visit = await ctx.prisma.visit.findFirst({
+        where: {
+          id: input.visitId,
+          userId: ctx.session.user.id,
+        },
+        select: { id: true }, // We only need the ID
+      });
+
+      if (!visit) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+
+      // 2. Create the new feedback.
+      // Prisma's `@unique` constraint on visitId will
+      // automatically throw an error if feedback already exists.
+      return ctx.prisma.feedback.create({
+        data: {
+          text: input.feedback,
+          visitId: input.visitId,
+        },
+      });
+    }),
+
+  getRecentFeedbacks: employeeProcedure.query(({ ctx }) => {
+    return ctx.prisma.feedback.findMany({
+      orderBy: {
+        createdAt: "desc", // Sort by when feedback was submitted!
+      },
+      take: 10,
+      include: {
+        visit: {
+          // We need the visit to get the user, visit date, and userId
+          include: {
+            user: {
+              select: { name: true }, // Who said it
+            },
+          },
+        },
+      },
+    });
+  }),
 });
 export type AppRouter = typeof appRouter;

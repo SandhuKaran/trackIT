@@ -81,6 +81,14 @@ export default function CustomerTimeline() {
                     />
                   </a>
                 )}
+                {v.feedback && (
+                  <div className="pt-4 border-t border-gray-700">
+                    <p className="font-semibold text-white">
+                      Customer Feedback:
+                    </p>
+                    <p className="text-gray-300 italic">{v.feedback.text}</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           ))}

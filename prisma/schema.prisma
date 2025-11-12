@@ -29,6 +29,17 @@ model Visit {
   photoUrl  String?
   user      User     @relation(fields: [userId], references: [id])
   userId    String
+  feedback  Feedback?
+}
+
+model Feedback {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now()) // For sorting by submission time!
+  text      String
+
+  // This creates the one-to-one relation
+  visit   Visit  @relation(fields: [visitId], references: [id])
+  visitId String @unique // @unique ensures one feedback per visit
 }
 
 enum UserRole {
