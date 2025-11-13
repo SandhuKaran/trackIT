@@ -19,6 +19,7 @@ model Request {
   title       String
   description String
   photoUrl    String?
+  resolvedBy  String?
 
   user   User   @relation(fields: [userId], references: [id])
   userId String

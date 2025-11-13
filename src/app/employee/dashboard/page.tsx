@@ -2,7 +2,8 @@
 import { trpc } from "@/lib/trpc/client";
 import Link from "next/link";
 import { useState } from "react"; // For search
-import { Loader2, Search } from "lucide-react"; // For loading and search icons
+import { Loader2, Search, CheckCircle } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 // Import all our shadcn components
 import { Card, CardContent } from "@/components/ui/card";
@@ -13,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function Dashboard() {
+  const router = useRouter();
   const { data: customers, isLoading: isLoadingCustomers } =
     trpc.listCustomers.useQuery();
   const { data: feedbacks, isLoading: isLoadingFeedbacks } =
@@ -20,6 +22,12 @@ export default function Dashboard() {
   const { data: requests, isLoading: isLoadingRequests } =
     trpc.getRecentRequests.useQuery();
   const [searchTerm, setSearchTerm] = useState(""); // State for the search input
+
+  const resolveRequest = trpc.resolveRequest.useMutation({
+    onSuccess: () => {
+      router.refresh();
+    },
+  });
 
   // Filter customers based on the search term
   const filteredCustomers = customers?.filter(
@@ -175,15 +183,17 @@ export default function Dashboard() {
           {/* --- TAB 3: REQUESTS --- */}
           <TabsContent value="requests">
             <div className="space-y-3 mt-4">
-              {/* Note: The H2 "Recent Requests" is removed */}
               {requests?.map((req) => (
-                <Link
-                  href={`/employee/customer/${req.user.id}`} // Link to customer
+                <Card
                   key={req.id}
-                  className="block"
+                  className="shadow-xl hover:bg-gray-900 transition-colors"
                 >
-                  <Card className="shadow-xl hover:bg-gray-900 transition-colors">
-                    <CardContent className="p-4">
+                  <CardContent className="p-4">
+                    {/* The Link now only wraps the top info section */}
+                    <Link
+                      href={`/employee/customer/${req.user.id}`}
+                      className="block"
+                    >
                       <p className="font-semibold text-white">{req.title}</p>
                       <p className="italic text-gray-200 truncate">
                         {req.description}
@@ -208,9 +218,35 @@ export default function Dashboard() {
                           }).format(new Date(req.createdAt))}
                         </span>
                       </div>
-                    </CardContent>
-                  </Card>
-                </Link>
+                    </Link>
+
+                    <div className="pt-3 mt-3 border-t border-gray-700">
+                      {req.resolvedBy ? (
+                        <div className="flex items-center gap-2 text-green-400">
+                          <CheckCircle className="h-4 w-4" />
+                          <span className="text-sm font-medium">
+                            Resolved by {req.resolvedBy}
+                          </span>
+                        </div>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full"
+                          onClick={() =>
+                            resolveRequest.mutate({ requestId: req.id })
+                          }
+                          disabled={resolveRequest.isPending}
+                        >
+                          {resolveRequest.isPending && (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          )}
+                          Mark as resolved
+                        </Button>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
               ))}
               {requests?.length === 0 && (
                 <Card>

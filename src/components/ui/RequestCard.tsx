@@ -1,20 +1,34 @@
+"use client"; // <-- Make sure this is a client component
 import type { Request } from "@prisma/client";
 import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { trpc } from "@/lib/trpc/client";
+import { useRouter } from "next/navigation";
+import { Loader2, CheckCircle } from "lucide-react";
 
 interface RequestCardProps {
+  // MODIFIED: Add resolvedBy
   request: Pick<
     Request,
-    "id" | "title" | "description" | "photoUrl" | "createdAt"
+    "id" | "title" | "description" | "photoUrl" | "createdAt" | "resolvedBy"
   >;
 }
 
 export function RequestCard({ request }: RequestCardProps) {
+  const router = useRouter();
+  const resolveRequest = trpc.resolveRequest.useMutation({
+    onSuccess: () => {
+      router.refresh();
+    },
+  });
+
   return (
     <Card key={request.id} className="shadow-lg">
       <CardHeader>
@@ -46,6 +60,31 @@ export function RequestCard({ request }: RequestCardProps) {
           </a>
         )}
       </CardContent>
+
+      <CardFooter>
+        {request.resolvedBy ? (
+          // 1. If resolved, show status
+          <div className="flex items-center gap-2 text-green-400">
+            <CheckCircle className="h-4 w-4" />
+            <span className="text-sm font-medium">
+              Resolved by {request.resolvedBy}
+            </span>
+          </div>
+        ) : (
+          // 2. If not resolved, show button
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => resolveRequest.mutate({ requestId: request.id })}
+            disabled={resolveRequest.isPending}
+          >
+            {resolveRequest.isPending && (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            )}
+            Mark as resolved
+          </Button>
+        )}
+      </CardFooter>
     </Card>
   );
 }

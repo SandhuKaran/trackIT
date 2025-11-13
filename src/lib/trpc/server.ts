@@ -253,5 +253,40 @@ export const appRouter = router({
       },
     });
   }),
+
+  resolveRequest: protectedProcedure
+    .input(
+      z.object({
+        requestId: z.string().cuid(),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      const { user } = ctx.session;
+
+      // 1. Find the request
+      const request = await ctx.prisma.request.findUnique({
+        where: { id: input.requestId },
+      });
+
+      if (!request) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+
+      // 2. Check permissions
+      // Allow if:
+      // a) The user is an EMPLOYEE
+      // b) The user is the CUSTOMER who created the request
+      if (user.role !== "EMPLOYEE" && request.userId !== user.id) {
+        throw new TRPCError({ code: "FORBIDDEN" });
+      }
+
+      // 3. Mark as resolved
+      return ctx.prisma.request.update({
+        where: { id: input.requestId },
+        data: {
+          resolvedBy: user.name ?? "User",
+        },
+      });
+    }),
 });
 export type AppRouter = typeof appRouter;
