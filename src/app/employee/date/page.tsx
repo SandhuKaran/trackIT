@@ -1,8 +1,9 @@
 "use client";
 import { trpc } from "@/lib/trpc/client";
 import React from "react";
-import { format } from "date-fns";
-import { CalendarIcon } from "lucide-react";
+// MODIFIED: Import `parse` for robust date string conversion
+import { format, subDays, addDays, isSameDay, parse } from "date-fns";
+import { CalendarIcon, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -11,22 +12,81 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { EmployeeVisitCard } from "@/components/ui/EmployeeVisitCard";
 import { cn } from "@/lib/utils";
+
+/**
+ * Renders a list of visits for a given date.
+ * Used inside the tabs.
+ */
+function VisitList({ date }: { date: Date }) {
+  const { data: visits, isFetching } = trpc.visitsByDate.useQuery({ date });
+
+  if (isFetching) {
+    return (
+      <div className="flex justify-center items-center pt-10">
+        <Loader2 className="h-6 w-6 animate-spin" />
+      </div>
+    );
+  }
+
+  if (visits?.length === 0) {
+    return (
+      <Card>
+        <CardContent>
+          <p className="pt-6 text-center text-gray-400">
+            No visits found for this date.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {visits?.map((v) => (
+        <EmployeeVisitCard key={v.id} visit={v} />
+      ))}
+    </div>
+  );
+}
 
 export default function VisitsByDate() {
   const [open, setOpen] = React.useState(false);
-  const [date, setDate] = React.useState<Date | undefined>(undefined);
+  const [date, setDate] = React.useState<Date>(new Date()); // Default to today
+  const [viewedMonth, setViewedMonth] = React.useState<Date>(date);
 
-  const visitsQuery = trpc.visitsByDate.useQuery(
-    { date: date as Date },
-    { enabled: !!date }
-  );
+  const yesterday = subDays(date, 1);
+  const tomorrow = addDays(date, 1);
+
+  // Store the date format string to ensure consistency
+  const dateFormat = "yyyy-MM-dd"; // <-- NEW
+
+  const formatTabDate = (d: Date) => {
+    const today = new Date();
+    if (isSameDay(d, today)) return "Today";
+    if (isSameDay(d, subDays(today, 1))) return "Yesterday";
+    if (isSameDay(d, addDays(today, 1))) return "Tomorrow";
+    return format(d, "MMM d");
+  };
+
+  // NEW: Handler for when a tab is clicked
+  const handleTabChange = (value: string) => {
+    // Parse the date string (e.g., "2025-11-12") back into a Date object
+    // We use `parse` from date-fns for a robust, timezone-safe conversion.
+    const newDate = parse(value, dateFormat, new Date());
+    setDate(newDate);
+    setViewedMonth(newDate);
+  };
+
+  const handleOpenChange = (isOpen: boolean) => {
+    if (isOpen) {
+      setViewedMonth(date); // Reset to the selected date
+    }
+    setOpen(isOpen);
+  };
 
   return (
     <div className="min-h-screen bg-black text-white dark">
@@ -37,7 +97,7 @@ export default function VisitsByDate() {
 
         {/* --- Date Picker --- */}
         <div className="flex flex-col items-center gap-3">
-          <Popover open={open} onOpenChange={setOpen}>
+          <Popover open={open} onOpenChange={handleOpenChange}>
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
@@ -54,64 +114,53 @@ export default function VisitsByDate() {
               <Calendar
                 mode="single"
                 selected={date}
+                month={viewedMonth} // NEW: Control the displayed month
+                onMonthChange={setViewedMonth} // NEW: Allow user to change month
                 onSelect={(newDate) => {
-                  setDate(newDate);
+                  if (newDate) {
+                    setDate(newDate);
+                    setViewedMonth(newDate); // NEW: Update viewed month on select
+                  }
                   setOpen(false);
                 }}
-                autoFocus
+                initialFocus
               />
             </PopoverContent>
           </Popover>
         </div>
 
-        {/* --- Results --- */}
-        {visitsQuery.isFetching && <p className="text-center">Loading...</p>}
+        {/* --- 3-TAB LAYOUT (Now Dynamic) --- */}
+        <Tabs
+          // MODIFIED: Use the consistent date format
+          defaultValue={format(date, dateFormat)}
+          key={date.toString()} // This key is crucial for re-rendering
+          className="w-full"
+          // NEW: Add the onValueChange handler
+          onValueChange={handleTabChange}
+        >
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value={format(yesterday, dateFormat)}>
+              {formatTabDate(yesterday)}
+            </TabsTrigger>
+            <TabsTrigger value={format(date, dateFormat)}>
+              {formatTabDate(date)}
+            </TabsTrigger>
+            <TabsTrigger value={format(tomorrow, dateFormat)}>
+              {formatTabDate(tomorrow)}
+            </TabsTrigger>
+          </TabsList>
 
-        {date && !visitsQuery.isFetching && (
-          <div className="space-y-4">
-            {visitsQuery.data?.map((v) => (
-              <Card key={v.id} className="shadow-xl">
-                <CardHeader>
-                  <CardDescription className="flex justify-between">
-                    <span>{v.user.name}</span>
-                    <span>{format(new Date(v.date), "h:mm a")}</span>
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <p>{v.note}</p>
-
-                  {v.photoUrl && (
-                    <a
-                      href={v.photoUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="block rounded-md overflow-hidden"
-                    >
-                      <img
-                        src={v.photoUrl.replace(
-                          "/upload/",
-                          "/upload/w_400,c_fill/"
-                        )}
-                        alt="Visit photo"
-                        className="w-full h-auto object-cover"
-                      />
-                    </a>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-
-            {visitsQuery.data?.length === 0 && (
-              <Card>
-                <CardContent>
-                  <p className="pt-6 text-center text-gray-400">
-                    No visits found for this date.
-                  </p>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-        )}
+          {/* These content sections will now be for the *new* dates */}
+          <TabsContent value={format(yesterday, dateFormat)} className="mt-4">
+            <VisitList date={yesterday} />
+          </TabsContent>
+          <TabsContent value={format(date, dateFormat)} className="mt-4">
+            <VisitList date={date} />
+          </TabsContent>
+          <TabsContent value={format(tomorrow, dateFormat)} className="mt-4">
+            <VisitList date={tomorrow} />
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   );

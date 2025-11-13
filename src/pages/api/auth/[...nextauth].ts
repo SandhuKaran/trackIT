@@ -28,7 +28,12 @@ export const authOptions: NextAuthOptions = {
         if (!valid) return null;
 
         // Everything OK — return the user object fields you need
-        return { id: user.id, email: user.email, role: user.role };
+        return {
+          id: user.id,
+          email: user.email,
+          role: user.role,
+          name: user.name,
+        };
       },
     }),
   ],
@@ -38,12 +43,14 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id;
         token.role = user.role as "CUSTOMER" | "EMPLOYEE";
+        token.name = user.name;
       }
       return token;
     },
     async session({ session, token }) {
       if (token?.id) session.user.id = token.id as string;
       session.user.role = token.role as "CUSTOMER" | "EMPLOYEE";
+      session.user.name = token.name as string;
       return session;
     },
   },

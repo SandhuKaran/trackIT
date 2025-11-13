@@ -31,7 +31,7 @@ const isEmployee = t.middleware(({ ctx, next }) => {
 export const employeeProcedure = protectedProcedure.use(isEmployee);
 
 export const appRouter = router({
-  // 🟢 NEW: fetch visits for the current user
+  // fetch visits for the current user
   getVisits: publicProcedure.query(async ({ ctx }) => {
     if (!ctx.session?.user?.id) {
       throw new TRPCError({ code: "UNAUTHORIZED" });
@@ -90,6 +90,7 @@ export const appRouter = router({
           note: input.note,
           photoUrl: input.photoUrl ?? null,
           date: input.date ?? new Date(),
+          signedBy: ctx.session.user.name ?? "Employee",
         },
       })
     ),
@@ -154,6 +155,7 @@ export const appRouter = router({
       z.object({
         visitId: z.string().cuid(),
         feedback: z.string().min(3, "Feedback is too short"),
+        photoUrl: z.string().url().optional(),
       })
     )
     .mutation(async ({ input, ctx }) => {
@@ -177,6 +179,7 @@ export const appRouter = router({
         data: {
           text: input.feedback,
           visitId: input.visitId,
+          photoUrl: input.photoUrl ?? null,
         },
       });
     }),
@@ -195,6 +198,57 @@ export const appRouter = router({
               select: { name: true }, // Who said it
             },
           },
+        },
+      },
+    });
+  }),
+
+  // Customer creates a request
+  createRequest: protectedProcedure
+    .input(
+      z.object({
+        title: z.string().min(3, "Title is too short"),
+        description: z.string().min(5, "Description is too short"),
+        photoUrl: z.string().url().optional(),
+      })
+    )
+    .mutation(({ input, ctx }) => {
+      return ctx.prisma.request.create({
+        data: {
+          title: input.title,
+          description: input.description,
+          photoUrl: input.photoUrl ?? null,
+          userId: ctx.session.user.id, // Link to the logged-in customer
+        },
+      });
+    }),
+
+  // Customer gets their own requests
+  getRequests: protectedProcedure.query(({ ctx }) => {
+    return ctx.prisma.request.findMany({
+      where: { userId: ctx.session.user.id },
+      orderBy: { createdAt: "desc" },
+    });
+  }),
+
+  // Employee gets requests for a specific customer
+  getRequestsByCustomer: employeeProcedure
+    .input(z.object({ customerId: z.string() }))
+    .query(({ input, ctx }) =>
+      ctx.prisma.request.findMany({
+        where: { userId: input.customerId },
+        orderBy: { createdAt: "desc" },
+      })
+    ),
+
+  // Employee gets all recent requests for the dashboard
+  getRecentRequests: employeeProcedure.query(({ ctx }) => {
+    return ctx.prisma.request.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 10,
+      include: {
+        user: {
+          select: { id: true, name: true }, // Need user for the link and name
         },
       },
     });

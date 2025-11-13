@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { trpc } from "@/lib/trpc/client";
+import { uploadImage } from "@/lib/cloudinaryUpload";
 import {
   Card,
   CardContent,
@@ -12,6 +13,8 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
 import type { Visit, Feedback } from "@prisma/client"; // Import the Visit type for props
 
@@ -28,6 +31,8 @@ export function VisitCard({ visit }: VisitCardProps) {
   const router = useRouter();
   const [isExpanded, setIsExpanded] = useState(false);
   const [feedback, setFeedback] = useState("");
+  const [file, setFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   const submitFeedback = trpc.submitFeedback.useMutation({
     onSuccess: () => {
@@ -35,11 +40,34 @@ export function VisitCard({ visit }: VisitCardProps) {
       // so the page updates to show the new feedback.
       router.refresh();
       setIsExpanded(false);
+      setFeedback("");
+      setFile(null);
     },
   });
 
-  const handleSubmit = () => {
-    submitFeedback.mutate({ visitId: visit.id, feedback });
+  const handleSubmit = async () => {
+    let photoUrl: string | undefined;
+
+    // 1. Handle file upload if one exists
+    if (file) {
+      setIsUploading(true);
+      try {
+        photoUrl = await uploadImage(file);
+      } catch (error) {
+        console.error("Failed to upload feedback image", error);
+        // TODO: Show an error message to the user (e.g., using toast)
+        setIsUploading(false);
+        return; // Stop submission
+      }
+      setIsUploading(false); // Done uploading
+    }
+
+    // 2. Mutate with the text and the new (optional) photoUrl
+    submitFeedback.mutate({
+      visitId: visit.id,
+      feedback: feedback, // The text from state
+      photoUrl: photoUrl, // This will be undefined or the Cloudinary URL
+    });
   };
 
   return (
@@ -51,10 +79,15 @@ export function VisitCard({ visit }: VisitCardProps) {
             timeStyle: "short",
           }).format(new Date(visit.date))}
         </CardDescription>
+        {visit.signedBy && (
+          <p className="text-xs text-gray-400 pt-1">
+            Signed by: {visit.signedBy}
+          </p>
+        )}
       </CardHeader>
       <CardContent className="space-y-4">
         {/* The original visit info */}
-        <p>{visit.note}</p>
+        <p className="whitespace-pre-wrap">{visit.note}</p>
         {visit.photoUrl && (
           <a
             href={visit.photoUrl}
@@ -73,35 +106,78 @@ export function VisitCard({ visit }: VisitCardProps) {
         {/* --- THIS IS THE NEW FEEDBACK SECTION --- */}
         {visit.feedback ? (
           // 1. Feedback already exists: Display it
-          <div className="pt-4 border-t border-gray-700">
+          <div className="pt-4 border-t border-gray-700 space-y-3">
             <p className="font-semibold text-white">Your Feedback:</p>
             <p className="text-gray-300 italic">{visit.feedback.text}</p>
+
+            {/* --- THIS IS THE DISPLAY FOR THE NEW IMAGE --- */}
+            {visit.feedback.photoUrl && (
+              <a
+                href={visit.feedback.photoUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block rounded-md overflow-hidden"
+              >
+                <img
+                  src={visit.feedback.photoUrl.replace(
+                    "/upload/",
+                    "/upload/w_400,c_fill/"
+                  )}
+                  alt="Feedback photo"
+                  className="w-full h-auto object-cover"
+                />
+              </a>
+            )}
           </div>
         ) : isExpanded ? (
           // 2. Add Feedback form is expanded: Show form
-          <div className="space-y-2 pt-2">
+          <div className="space-y-3 pt-2">
             <Textarea
               placeholder="How did we do? Let us know..."
               value={feedback}
               onChange={(e) => setFeedback(e.target.value)}
             />
+
+            {/* --- THIS IS THE NEW FILE INPUT --- */}
+            <div className="grid gap-1.5">
+              <Label htmlFor={`photo-upload-${visit.id}`}>
+                Add Photo (Optional)
+              </Label>
+              <Input
+                id={`photo-upload-${visit.id}`} // Unique ID per card
+                type="file"
+                accept="image/*"
+                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+              />
+            </div>
+            {/* --- END OF NEW FILE INPUT --- */}
+
             <div className="flex justify-end gap-2">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setIsExpanded(false)}
+                disabled={submitFeedback.isPending || isUploading} // <-- MODIFIED
               >
                 Cancel
               </Button>
               <Button
                 size="sm"
                 onClick={handleSubmit}
-                disabled={feedback.length < 3 || submitFeedback.isPending}
+                // MODIFIED: Disable button if uploading OR submitting
+                disabled={
+                  feedback.length < 3 || submitFeedback.isPending || isUploading
+                }
               >
-                {submitFeedback.isPending && (
+                {(submitFeedback.isPending || isUploading) && ( // <-- MODIFIED
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 )}
-                Submit
+                {/* MODIFIED: Show different loading text */}
+                {isUploading
+                  ? "Uploading..."
+                  : submitFeedback.isPending
+                  ? "Submitting..."
+                  : "Submit"}
               </Button>
             </div>
           </div>
@@ -113,7 +189,6 @@ export function VisitCard({ visit }: VisitCardProps) {
             </Button>
           </CardFooter>
         )}
-        {/* --- END OF FEEDBACK SECTION --- */}
       </CardContent>
     </Card>
   );

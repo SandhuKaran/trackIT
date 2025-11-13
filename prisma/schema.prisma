@@ -13,6 +13,19 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Request {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+  title       String
+  description String
+  photoUrl    String?
+
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
+
+  @@index([userId])
+}
+
 model User {
   id        String   @id @default(cuid())
   name      String   @default("Unnamed User")
@@ -20,6 +33,7 @@ model User {
   password  String
   role      UserRole @default(CUSTOMER)   
   visits    Visit[]
+  requests Request[]
 }
 
 model Visit {
@@ -27,6 +41,7 @@ model Visit {
   date      DateTime
   note      String
   photoUrl  String?
+  signedBy  String?
   user      User     @relation(fields: [userId], references: [id])
   userId    String
   feedback  Feedback?
@@ -36,6 +51,7 @@ model Feedback {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now()) // For sorting by submission time!
   text      String
+  photoUrl  String?
 
   // This creates the one-to-one relation
   visit   Visit  @relation(fields: [visitId], references: [id])
