@@ -91,22 +91,27 @@ export default function CustomerTimeline() {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <p className="whitespace-pre-wrap">{v.note}</p>
-                    {v.photoUrl && (
-                      <a
-                        href={v.photoUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="block rounded-md overflow-hidden"
-                      >
-                        <img
-                          src={v.photoUrl.replace(
-                            "/upload/",
-                            "/upload/w_400,c_fill/"
-                          )}
-                          alt="Visit photo"
-                          className="w-full h-auto object-cover"
-                        />
-                      </a>
+                    {v.photos && v.photos.length > 0 && (
+                      <div className="grid grid-cols-2 gap-2">
+                        {v.photos.map((photo) => (
+                          <a
+                            key={photo.id}
+                            href={photo.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block rounded-md overflow-hidden"
+                          >
+                            <img
+                              src={photo.url.replace(
+                                "/upload/",
+                                "/upload/w_400,c_fill/"
+                              )}
+                              alt="Visit photo"
+                              className="w-full h-auto object-cover"
+                            />
+                          </a>
+                        ))}
+                      </div>
                     )}
                     {v.feedback && (
                       <div className="pt-4 border-t border-gray-700 space-y-3">

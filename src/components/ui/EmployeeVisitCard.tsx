@@ -46,19 +46,24 @@ export function EmployeeVisitCard({ visit }: EmployeeVisitCardProps) {
         <p className="whitespace-pre-wrap">{visit.note}</p>
 
         {/* Visit Photo */}
-        {visit.photoUrl && (
-          <a
-            href={visit.photoUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block rounded-md overflow-hidden"
-          >
-            <img
-              src={visit.photoUrl.replace("/upload/", "/upload/w_400,c_fill/")}
-              alt="Visit photo"
-              className="w-full h-auto object-cover"
-            />
-          </a>
+        {visit.photos && visit.photos.length > 0 && (
+          <div className="grid grid-cols-2 gap-2">
+            {visit.photos.map((photo) => (
+              <a
+                key={photo.id}
+                href={photo.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block rounded-md overflow-hidden"
+              >
+                <img
+                  src={photo.url.replace("/upload/", "/upload/w_400,c_fill/")}
+                  alt="Visit photo"
+                  className="w-full h-auto object-cover"
+                />
+              </a>
+            ))}
+          </div>
         )}
 
         {/* Existing Feedback Display */}

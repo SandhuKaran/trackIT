@@ -41,11 +41,20 @@ model Visit {
   id        String   @id @default(cuid())
   date      DateTime
   note      String
-  photoUrl  String?
   signedBy  String?
   user      User     @relation(fields: [userId], references: [id])
   userId    String
   feedback  Feedback?
+  photos    Photo[]
+}
+
+model Photo {
+  id      String @id @default(cuid())
+  url     String
+  visit   Visit  @relation(fields: [visitId], references: [id])
+  visitId String
+
+  @@index([visitId])
 }
 
 model Feedback {

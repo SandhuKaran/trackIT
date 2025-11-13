@@ -3,7 +3,7 @@ import React, { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc/client";
 import { useRouter } from "next/navigation";
 import { uploadImage } from "@/lib/cloudinaryUpload";
-import { Check, Loader2 } from "lucide-react";
+import { Check, Loader2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 import {
@@ -45,7 +45,7 @@ export default function AddEntry() {
 
   const [customerId, setCustomerId] = useState("");
   const [customNote, setCustomNote] = useState("");
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
   const [services, setServices] = useState({
     lawnMowing: false,
@@ -75,6 +75,16 @@ export default function AddEntry() {
         c.email.toLowerCase().includes(searchQuery.toLowerCase())
     );
   }, [sortedCustomers, searchQuery]);
+
+  const filePreviews = useMemo(() => {
+    return files.map((file) => URL.createObjectURL(file));
+  }, [files]);
+
+  const removeFile = (index: number) => {
+    setFiles((prev) => prev.filter((_, i) => i !== index));
+    // Revoke the object URL to prevent memory leaks
+    URL.revokeObjectURL(filePreviews[index]);
+  };
 
   function handleServiceChange(
     serviceId: keyof typeof services,
@@ -116,14 +126,21 @@ export default function AddEntry() {
       finalNote += `Work Notes: ${customNote.trim()}`;
     }
 
-    let photoUrl: string | undefined;
-    if (file) {
+    let photoUrls: string[] = []; // Now an array
+    if (files.length > 0) {
       setUploading(true);
-      photoUrl = await uploadImage(file);
+      // Create an array of upload promises
+      const uploadPromises = files.map((file) => uploadImage(file));
+      // Wait for all of them to finish
+      photoUrls = await Promise.all(uploadPromises);
       setUploading(false);
     }
 
-    createVisit.mutate({ customerId, note: finalNote.trim(), photoUrl });
+    createVisit.mutate({
+      customerId,
+      note: finalNote.trim(),
+      photoUrls,
+    });
   }
 
   return (
@@ -230,14 +247,45 @@ export default function AddEntry() {
           </div>
 
           <div className="grid gap-2">
-            <Label htmlFor="photo-upload">Photo (Optional)</Label>
+            <Label htmlFor="photo-upload">Photos (Optional)</Label>
             <Input
               id="photo-upload"
               type="file"
               accept="image/*"
-              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+              multiple // <-- ADD THIS
+              onChange={(e) => {
+                if (e.target.files) {
+                  setFiles((prev) => [...prev, ...Array.from(e.target.files!)]);
+                }
+              }}
+              // Clear the input value so the same file can be added again if removed
+              value=""
             />
           </div>
+
+          {/* NEW: Image Preview Grid */}
+          {filePreviews.length > 0 && (
+            <div className="grid grid-cols-3 gap-2">
+              {filePreviews.map((previewUrl, index) => (
+                <div key={index} className="relative">
+                  <img
+                    src={previewUrl}
+                    alt={`Preview ${index + 1}`}
+                    className="w-full h-24 object-cover rounded-md"
+                  />
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="icon"
+                    className="absolute top-1 right-1 h-6 w-6"
+                    onClick={() => removeFile(index)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
 
         <CardFooter className="flex flex-col gap-2">

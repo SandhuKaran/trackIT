@@ -42,6 +42,7 @@ export const appRouter = router({
       orderBy: { date: "desc" },
       include: {
         feedback: true,
+        photos: true,
       },
     });
   }),
@@ -61,6 +62,7 @@ export const appRouter = router({
         orderBy: { date: "desc" },
         include: {
           feedback: true,
+          photos: true,
         },
       })
     ),
@@ -79,18 +81,26 @@ export const appRouter = router({
       z.object({
         customerId: z.string().cuid(), // the user.id of the customer
         note: z.string().min(2, "Write something"),
-        photoUrl: z.string().url().optional(),
+        photoUrls: z.array(z.string().url()).optional(),
         date: z.date().optional(), // defaults to Now if omitted
       })
     )
     .mutation(({ input, ctx }) =>
+      // MODIFIED: Use a nested write to create the visit and photos together
       ctx.prisma.visit.create({
         data: {
           userId: input.customerId,
           note: input.note,
-          photoUrl: input.photoUrl ?? null,
           date: input.date ?? new Date(),
           signedBy: ctx.session.user.name ?? "Employee",
+          // This block creates all the related photos
+          photos: input.photoUrls
+            ? {
+                createMany: {
+                  data: input.photoUrls.map((url) => ({ url })),
+                },
+              }
+            : undefined,
         },
       })
     ),
@@ -108,6 +118,7 @@ export const appRouter = router({
         include: {
           user: { select: { email: true, name: true } }, // to show whose lawn
           feedback: true,
+          photos: true,
         },
         orderBy: { date: "desc" },
       })
