@@ -17,11 +17,20 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
 export default function AddCustomerPage() {
   const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [role, setRole] = useState<"CUSTOMER" | "EMPLOYEE">("CUSTOMER");
   const [error, setError] = useState<string | null>(null);
 
   const createCustomer = trpc.createCustomer.useMutation({
@@ -37,21 +46,37 @@ export default function AddCustomerPage() {
 
   function handleSubmit() {
     setError(null); // Clear old errors
-    createCustomer.mutate({ name, email, password });
+    createCustomer.mutate({ name, email, password, role });
   }
 
   return (
     <div className="min-h-screen bg-black text-white dark flex items-center justify-center p-4">
       <Card className="w-full max-w-lg shadow-xl">
         <CardHeader>
-          <CardTitle className="text-2xl">Add New Customer</CardTitle>
+          <CardTitle className="text-2xl">Add New User</CardTitle>
           <CardDescription>
-            Create a new customer account. They will use this email and password
-            to log in.
+            Create a new account. They will use this email and password to log
+            in.
           </CardDescription>
         </CardHeader>
 
         <CardContent className="grid gap-4">
+          <div className="grid gap-2">
+            <Label htmlFor="role-select">User Role</Label>
+            <Select
+              value={role}
+              onValueChange={(value: "CUSTOMER" | "EMPLOYEE") => setRole(value)}
+            >
+              <SelectTrigger id="role-select" className="w-full">
+                <SelectValue placeholder="Select a role" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="CUSTOMER">Customer</SelectItem>
+                <SelectItem value="EMPLOYEE">Employee</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           <div className="grid gap-2">
             <Label htmlFor="name">Full Name</Label>
             <Input

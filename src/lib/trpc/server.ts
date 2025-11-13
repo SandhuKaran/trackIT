@@ -130,10 +130,12 @@ export const appRouter = router({
         name: z.string().min(2, "Name is too short"),
         email: z.string().email("Invalid email"),
         password: z.string().min(8, "Password must be at least 8 characters"),
+        // MODIFIED: Add the role to the input validation
+        role: z.enum(["CUSTOMER", "EMPLOYEE"]),
       })
     )
     .mutation(async ({ input, ctx }) => {
-      // 1. Check if user already exists
+      // 1. Check if user already exists (unchanged)
       const existingUser = await ctx.prisma.user.findUnique({
         where: { email: input.email },
       });
@@ -148,13 +150,13 @@ export const appRouter = router({
       // 2. Hash the password
       const hashedPassword = await bcrypt.hash(input.password, 10);
 
-      // 3. Create the new customer
+      // 3. Create the new user
       const newUser = await ctx.prisma.user.create({
         data: {
           name: input.name,
           email: input.email,
           password: hashedPassword,
-          role: "CUSTOMER",
+          role: input.role,
         },
       });
 
