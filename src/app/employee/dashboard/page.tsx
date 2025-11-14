@@ -1,7 +1,7 @@
 "use client";
 import { trpc } from "@/lib/trpc/client";
 import Link from "next/link";
-import { useState } from "react"; // For search
+import { useState, useTransition } from "react";
 import { Loader2, Search, CheckCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -22,10 +22,17 @@ export default function Dashboard() {
   const { data: requests, isLoading: isLoadingRequests } =
     trpc.getRecentRequests.useQuery();
   const [searchTerm, setSearchTerm] = useState(""); // State for the search input
+  const [isRefreshing, startTransition] = useTransition();
+  const utils = trpc.useUtils();
 
   const resolveRequest = trpc.resolveRequest.useMutation({
     onSuccess: () => {
-      router.refresh();
+      startTransition(() => {
+        // 1. Invalidate this page's query
+        utils.getRecentRequests.invalidate();
+        // 2. Just in case, refresh server props
+        router.refresh();
+      });
     },
   });
 
@@ -44,6 +51,8 @@ export default function Dashboard() {
       </div>
     );
   }
+
+  const isResolving = resolveRequest.isPending || isRefreshing;
 
   return (
     // Dark theme wrapper
@@ -100,7 +109,7 @@ export default function Dashboard() {
               </div>
 
               {/* Customer List */}
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {filteredCustomers?.map((c) => (
                   <Card key={c.id} className="shadow-xl">
                     <CardContent className="p-4 flex justify-between items-center">
@@ -131,7 +140,7 @@ export default function Dashboard() {
 
           {/* --- TAB 2: FEEDBACK --- */}
           <TabsContent value="feedback">
-            <div className="space-y-3 mt-4">
+            <div className="space-y-8 mt-4">
               {/* Note: The H2 "Recent Feedback" is removed as the tab provides context */}
               {feedbacks?.map((fb) => (
                 <Link
@@ -182,7 +191,7 @@ export default function Dashboard() {
 
           {/* --- TAB 3: REQUESTS --- */}
           <TabsContent value="requests">
-            <div className="space-y-3 mt-4">
+            <div className="space-y-8 mt-4">
               {requests?.map((req) => (
                 <Card
                   key={req.id}
@@ -236,9 +245,9 @@ export default function Dashboard() {
                           onClick={() =>
                             resolveRequest.mutate({ requestId: req.id })
                           }
-                          disabled={resolveRequest.isPending}
+                          disabled={isResolving}
                         >
-                          {resolveRequest.isPending && (
+                          {isResolving && (
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                           )}
                           Mark as resolved

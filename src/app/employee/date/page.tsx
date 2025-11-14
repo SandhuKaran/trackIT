@@ -45,7 +45,7 @@ function VisitList({ date }: { date: Date }) {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-8">
       {visits?.map((v) => (
         <EmployeeVisitCard key={v.id} visit={v} />
       ))}

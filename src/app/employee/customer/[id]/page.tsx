@@ -73,7 +73,7 @@ export default function CustomerTimeline() {
 
           {/* --- VISITS TAB CONTENT (Original Code) --- */}
           <TabsContent value="visits">
-            <div className="space-y-4 mt-4">
+            <div className="space-y-8 mt-4">
               {visits?.map((v) => (
                 <Card key={v.id} className="shadow-xl">
                   <CardHeader>
@@ -160,7 +160,7 @@ export default function CustomerTimeline() {
 
           {/* --- NEW REQUESTS TAB CONTENT --- */}
           <TabsContent value="requests">
-            <div className="space-y-4 mt-4">
+            <div className="space-y-8 mt-4">
               {requests?.map((req) => (
                 <RequestCard key={req.id} request={req} />
               ))}

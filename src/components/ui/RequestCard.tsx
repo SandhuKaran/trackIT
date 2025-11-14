@@ -1,4 +1,6 @@
-"use client"; // <-- Make sure this is a client component
+"use client";
+// NEW: Import useTransition
+import React, { useTransition } from "react";
 import type { Request } from "@prisma/client";
 import {
   Card,
@@ -14,7 +16,6 @@ import { useRouter } from "next/navigation";
 import { Loader2, CheckCircle } from "lucide-react";
 
 interface RequestCardProps {
-  // MODIFIED: Add resolvedBy
   request: Pick<
     Request,
     "id" | "title" | "description" | "photoUrl" | "createdAt" | "resolvedBy"
@@ -23,17 +24,30 @@ interface RequestCardProps {
 
 export function RequestCard({ request }: RequestCardProps) {
   const router = useRouter();
+  // NEW: Set up the transition state
+  const [isRefreshing, startTransition] = useTransition();
+  const utils = trpc.useUtils();
+
   const resolveRequest = trpc.resolveRequest.useMutation({
     onSuccess: () => {
-      router.refresh();
+      startTransition(() => {
+        // 1. Invalidate client-side queries (for pages like /employee/customer/[id])
+        utils.getRequestsByCustomer.invalidate();
+        // 2. Refresh server-side props (for pages like /timeline)
+        router.refresh();
+      });
     },
   });
+
+  // NEW: Combine both loading states
+  const isLoading = resolveRequest.isPending || isRefreshing;
 
   return (
     <Card key={request.id} className="shadow-lg">
       <CardHeader>
         <CardTitle className="text-lg">{request.title}</CardTitle>
-        <CardDescription>
+        {/* Fix 1: Add suppressHydrationWarning */}
+        <CardDescription suppressHydrationWarning>
           Requested on:{" "}
           {new Intl.DateTimeFormat("en-CA", {
             dateStyle: "medium",
@@ -63,7 +77,6 @@ export function RequestCard({ request }: RequestCardProps) {
 
       <CardFooter>
         {request.resolvedBy ? (
-          // 1. If resolved, show status
           <div className="flex items-center gap-2 text-green-400">
             <CheckCircle className="h-4 w-4" />
             <span className="text-sm font-medium">
@@ -71,16 +84,15 @@ export function RequestCard({ request }: RequestCardProps) {
             </span>
           </div>
         ) : (
-          // 2. If not resolved, show button
           <Button
             variant="outline"
             size="sm"
             onClick={() => resolveRequest.mutate({ requestId: request.id })}
-            disabled={resolveRequest.isPending}
+            // MODIFIED: Use the combined isLoading state
+            disabled={isLoading}
           >
-            {resolveRequest.isPending && (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            )}
+            {/* MODIFIED: Use the combined isLoading state */}
+            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Mark as resolved
           </Button>
         )}
