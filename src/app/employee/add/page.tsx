@@ -72,7 +72,8 @@ export default function AddEntry() {
     return sortedCustomers.filter(
       (c) =>
         c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        c.email.toLowerCase().includes(searchQuery.toLowerCase())
+        c.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        c.address?.toLowerCase().includes(searchQuery.toLowerCase())
     );
   }, [sortedCustomers, searchQuery]);
 
@@ -202,6 +203,7 @@ export default function AddEntry() {
                       />
                       <div>
                         <p>{c.name}</p>
+                        <p className="text-xs text-gray-400">{c.address}</p>
                         <p className="text-xs text-gray-400">{c.email}</p>
                       </div>
                     </CommandItem>

@@ -40,7 +40,8 @@ export default function Dashboard() {
   const filteredCustomers = customers?.filter(
     (c) =>
       c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.email.toLowerCase().includes(searchTerm.toLowerCase())
+      c.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      c.address?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   // Styled loading state
@@ -115,6 +116,9 @@ export default function Dashboard() {
                     <CardContent className="p-4 flex justify-between items-center">
                       <div className="flex flex-col">
                         <span className="font-medium">{c.name}</span>
+                        <span className="text-sm text-gray-400">
+                          {c.address}
+                        </span>
                         <span className="text-sm text-gray-400">{c.email}</span>
                       </div>
                       <Button asChild variant="ghost" size="sm">
@@ -163,7 +167,10 @@ export default function Dashboard() {
                       )}
                       <div className="flex justify-between items-center mt-3 text-sm">
                         <span className="font-semibold text-white">
-                          - {fb.visit.user.name}
+                          - {fb.visit.user.name}{" "}
+                          <span className="text-gray-400 font-normal">
+                            ({fb.visit.user.address})
+                          </span>
                         </span>
                         <span className="text-gray-400">
                           {new Intl.DateTimeFormat("en-CA", {
@@ -219,7 +226,10 @@ export default function Dashboard() {
                       )}
                       <div className="flex justify-between items-center mt-3 text-sm">
                         <span className="font-semibold text-white">
-                          - {req.user.name}
+                          - {req.user.name}{" "}
+                          <span className="text-gray-400 font-normal">
+                            ({req.user.address})
+                          </span>
                         </span>
                         <span className="text-gray-400">
                           {new Intl.DateTimeFormat("en-CA", {

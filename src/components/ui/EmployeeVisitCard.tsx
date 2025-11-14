@@ -30,7 +30,10 @@ export function EmployeeVisitCard({ visit }: EmployeeVisitCardProps) {
       <CardHeader>
         <CardDescription className="flex justify-between">
           {/* Show the customer's name and the time of the visit */}
-          <span className="font-medium text-white">{visit.user.name}</span>
+          <div className="flex flex-col">
+            <span className="font-medium text-white">{visit.user.name}</span>
+            <span className="text-gray-400">{visit.user.address}</span>
+          </div>
           <span className="text-gray-400">
             {format(new Date(visit.date), "h:mm a")}
           </span>

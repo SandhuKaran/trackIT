@@ -50,7 +50,7 @@ export const appRouter = router({
   listCustomers: employeeProcedure.query(({ ctx }) =>
     ctx.prisma.user.findMany({
       where: { role: "CUSTOMER" },
-      select: { id: true, email: true, name: true },
+      select: { id: true, email: true, name: true, address: true },
     })
   ),
 
@@ -72,7 +72,7 @@ export const appRouter = router({
     .query(({ input, ctx }) =>
       ctx.prisma.user.findUnique({
         where: { id: input.id, role: "CUSTOMER" }, // Find by ID and ensure they're a customer
-        select: { id: true, email: true, name: true }, // Only return the data we need
+        select: { id: true, email: true, name: true, address: true }, // Only return the data we need
       })
     ),
 
@@ -116,7 +116,7 @@ export const appRouter = router({
           },
         },
         include: {
-          user: { select: { email: true, name: true } }, // to show whose lawn
+          user: { select: { email: true, name: true, address: true } }, // to show whose lawn
           feedback: true,
           photos: true,
         },
@@ -130,8 +130,8 @@ export const appRouter = router({
         name: z.string().min(2, "Name is too short"),
         email: z.string().email("Invalid email"),
         password: z.string().min(8, "Password must be at least 8 characters"),
-        // MODIFIED: Add the role to the input validation
         role: z.enum(["CUSTOMER", "EMPLOYEE"]),
+        address: z.string().min(5, "Address is too short"),
       })
     )
     .mutation(async ({ input, ctx }) => {
@@ -157,6 +157,7 @@ export const appRouter = router({
           email: input.email,
           password: hashedPassword,
           role: input.role,
+          address: input.address,
         },
       });
 
@@ -208,7 +209,7 @@ export const appRouter = router({
           // We need the visit to get the user, visit date, and userId
           include: {
             user: {
-              select: { name: true }, // Who said it
+              select: { name: true, address: true }, // Who said it
             },
           },
         },
@@ -261,7 +262,7 @@ export const appRouter = router({
       take: 10,
       include: {
         user: {
-          select: { id: true, name: true }, // Need user for the link and name
+          select: { id: true, name: true, address: true }, // Need user for the link and name
         },
       },
     });

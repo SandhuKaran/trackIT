@@ -58,6 +58,7 @@ export default function CustomerTimeline() {
         <h1 className="text-2xl font-semibold mb-2 text-center pt-6">
           {customer?.name ?? "Customer"}
         </h1>
+        <p className="text-center text-gray-400 mb-1">{customer?.address}</p>
         <p className="text-center text-gray-400 mb-6">{customer?.email}</p>
 
         {/* --- NEW TABS WRAPPER --- */}

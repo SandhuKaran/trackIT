@@ -31,6 +31,7 @@ export default function AddCustomerPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<"CUSTOMER" | "EMPLOYEE">("CUSTOMER");
+  const [address, setAddress] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   const createCustomer = trpc.createCustomer.useMutation({
@@ -46,7 +47,7 @@ export default function AddCustomerPage() {
 
   function handleSubmit() {
     setError(null); // Clear old errors
-    createCustomer.mutate({ name, email, password, role });
+    createCustomer.mutate({ name, email, password, role, address });
   }
 
   return (
@@ -84,6 +85,16 @@ export default function AddCustomerPage() {
               placeholder="John Doe"
               value={name}
               onChange={(e) => setName(e.target.value)}
+            />
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="address">Address</Label>
+            <Input
+              id="address"
+              placeholder="123 Main St, Toronto"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
             />
           </div>
 
