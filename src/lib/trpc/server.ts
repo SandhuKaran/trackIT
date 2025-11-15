@@ -17,8 +17,16 @@ const isAuthed = t.middleware(({ ctx, next }) => {
     throw new TRPCError({ code: "UNAUTHORIZED" });
   }
   // ctx.session.user is now non-null for downstream resolvers
-  return next({ ctx });
+  return next({
+    ctx: {
+      ...ctx,
+      // We're telling TypeScript that for all downstream middleware and resolvers,
+      // session and session.user are guaranteed to be non-null.
+      session: { ...ctx.session, user: ctx.session.user },
+    },
+  });
 });
+
 export const protectedProcedure = t.procedure.use(isAuthed);
 
 /* 2️⃣  Employee-only guard layered on top */
@@ -28,6 +36,7 @@ const isEmployee = t.middleware(({ ctx, next }) => {
   }
   return next({ ctx });
 });
+
 export const employeeProcedure = protectedProcedure.use(isEmployee);
 
 export const appRouter = router({
@@ -92,7 +101,7 @@ export const appRouter = router({
           userId: input.customerId,
           note: input.note,
           date: input.date ?? new Date(),
-          signedBy: ctx.session.user.name ?? "Employee",
+          signedBy: ctx.session?.user?.name ?? "Employee",
           // This block creates all the related photos
           photos: input.photoUrls
             ? {

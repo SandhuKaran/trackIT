@@ -18,15 +18,15 @@ import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
 import type { Visit, Feedback } from "@prisma/client"; // Import the Visit type for props
 
-type VisitWithFeedback = Visit & {
-  feedback: Feedback | null; // The feedback property is now an object or null
-};
+import type { inferRouterOutputs } from "@trpc/server";
+import type { AppRouter } from "@/lib/trpc/server";
 
-// Define the props for our new component
+type VisitFromTRPC = inferRouterOutputs<AppRouter>["getVisits"][number];
+
+// Define the props for our component
 interface VisitCardProps {
-  visit: VisitWithFeedback; // We'll pass the full visit object
+  visit: VisitFromTRPC; // Use the new inferred type
 }
-
 export function VisitCard({ visit }: VisitCardProps) {
   const router = useRouter();
   const [isExpanded, setIsExpanded] = useState(false);

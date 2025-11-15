@@ -7,17 +7,13 @@ import {
   CardHeader,
 } from "@/components/ui/card";
 
-// Define the shape of the visit data we expect from the 'visitsByDate' query
-type VisitByDate = Visit & {
-  feedback: Feedback | null;
-  user: {
-    name: string | null;
-    email: string | null;
-  };
-};
+import type { inferRouterOutputs } from "@trpc/server";
+import type { AppRouter } from "@/lib/trpc/server";
+
+type VisitByDate = inferRouterOutputs<AppRouter>["visitsByDate"][number];
 
 interface EmployeeVisitCardProps {
-  visit: VisitByDate;
+  visit: VisitByDate; // Use the new inferred type
 }
 
 /**
