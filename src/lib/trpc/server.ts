@@ -29,15 +29,37 @@ const isAuthed = t.middleware(({ ctx, next }) => {
 
 export const protectedProcedure = t.procedure.use(isAuthed);
 
-/* 2️⃣  Employee-only guard layered on top */
-const isEmployee = t.middleware(({ ctx, next }) => {
-  if (ctx.session!.user.role !== "EMPLOYEE") {
+/* Staff guard (Employee OR Admin) layered on top */
+const isStaff = t.middleware(({ ctx, next }) => {
+  if (
+    ctx.session?.user.role !== "EMPLOYEE" &&
+    ctx.session?.user.role !== "ADMIN"
+  ) {
     throw new TRPCError({ code: "FORBIDDEN" });
   }
-  return next({ ctx });
+  return next({
+    ctx: {
+      ...ctx,
+      session: ctx.session,
+    },
+  });
 });
 
-export const employeeProcedure = protectedProcedure.use(isEmployee);
+export const staffProcedure = protectedProcedure.use(isStaff);
+
+const isAdmin = t.middleware(({ ctx, next }) => {
+  if (ctx.session?.user.role !== "ADMIN") {
+    throw new TRPCError({ code: "FORBIDDEN" });
+  }
+  return next({
+    ctx: {
+      ...ctx,
+      session: ctx.session,
+    },
+  });
+});
+
+export const adminProcedure = protectedProcedure.use(isAdmin);
 
 export const appRouter = router({
   // fetch visits for the current user
@@ -56,14 +78,14 @@ export const appRouter = router({
     });
   }),
 
-  listCustomers: employeeProcedure.query(({ ctx }) =>
+  listCustomers: staffProcedure.query(({ ctx }) =>
     ctx.prisma.user.findMany({
       where: { role: "CUSTOMER" },
       select: { id: true, email: true, name: true, address: true },
     })
   ),
 
-  visitsByCustomer: employeeProcedure
+  visitsByCustomer: staffProcedure
     .input(z.object({ customerId: z.string() }))
     .query(({ input, ctx }) =>
       ctx.prisma.visit.findMany({
@@ -76,7 +98,7 @@ export const appRouter = router({
       })
     ),
 
-  customerById: employeeProcedure
+  customerById: staffProcedure
     .input(z.object({ id: z.string() })) // It takes a single 'id' string
     .query(({ input, ctx }) =>
       ctx.prisma.user.findUnique({
@@ -85,7 +107,7 @@ export const appRouter = router({
       })
     ),
 
-  createVisit: employeeProcedure
+  createVisit: staffProcedure
     .input(
       z.object({
         customerId: z.string().cuid(), // the user.id of the customer
@@ -101,7 +123,7 @@ export const appRouter = router({
           userId: input.customerId,
           note: input.note,
           date: input.date ?? new Date(),
-          signedBy: ctx.session?.user?.name ?? "Employee",
+          signedBy: ctx.session?.user?.name ?? "Staff",
           // This block creates all the related photos
           photos: input.photoUrls
             ? {
@@ -114,7 +136,7 @@ export const appRouter = router({
       })
     ),
 
-  visitsByDate: employeeProcedure
+  visitsByDate: staffProcedure
     .input(z.object({ date: z.date() }))
     .query(({ input, ctx }) =>
       ctx.prisma.visit.findMany({
@@ -133,13 +155,13 @@ export const appRouter = router({
       })
     ),
 
-  createCustomer: employeeProcedure
+  createCustomer: adminProcedure
     .input(
       z.object({
         name: z.string().min(2, "Name is too short"),
         email: z.string().email("Invalid email"),
         password: z.string().min(8, "Password must be at least 8 characters"),
-        role: z.enum(["CUSTOMER", "EMPLOYEE"]),
+        role: z.enum(["CUSTOMER", "EMPLOYEE", "ADMIN"]),
         address: z.string().min(5, "Address is too short"),
       })
     )
@@ -207,7 +229,7 @@ export const appRouter = router({
       });
     }),
 
-  getRecentFeedbacks: employeeProcedure.query(({ ctx }) => {
+  getRecentFeedbacks: staffProcedure.query(({ ctx }) => {
     return ctx.prisma.feedback.findMany({
       orderBy: {
         createdAt: "desc", // Sort by when feedback was submitted!
@@ -255,7 +277,7 @@ export const appRouter = router({
   }),
 
   // Employee gets requests for a specific customer
-  getRequestsByCustomer: employeeProcedure
+  getRequestsByCustomer: staffProcedure
     .input(z.object({ customerId: z.string() }))
     .query(({ input, ctx }) =>
       ctx.prisma.request.findMany({
@@ -265,7 +287,7 @@ export const appRouter = router({
     ),
 
   // Employee gets all recent requests for the dashboard
-  getRecentRequests: employeeProcedure.query(({ ctx }) => {
+  getRecentRequests: staffProcedure.query(({ ctx }) => {
     return ctx.prisma.request.findMany({
       orderBy: { createdAt: "desc" },
       take: 10,
@@ -297,9 +319,9 @@ export const appRouter = router({
 
       // 2. Check permissions
       // Allow if:
-      // a) The user is an EMPLOYEE
+      // a) The user is an EMPLOYEE or ADMIN (i.e., not a CUSTOMER)
       // b) The user is the CUSTOMER who created the request
-      if (user.role !== "EMPLOYEE" && request.userId !== user.id) {
+      if (user.role === "CUSTOMER" && request.userId !== user.id) {
         throw new TRPCError({ code: "FORBIDDEN" });
       }
 

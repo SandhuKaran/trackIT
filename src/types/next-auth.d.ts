@@ -9,7 +9,7 @@ declare module "next-auth" {
    * It ensures the `user` object passed to the `jwt` callback has your custom properties.
    */
   interface User extends DefaultUser {
-    role: "CUSTOMER" | "EMPLOYEE";
+    role: "CUSTOMER" | "EMPLOYEE" | "ADMIN";
     // You can add any other properties you return from `authorize` here
     // e.g., id: string; (though DefaultUser already has id)
   }
@@ -22,7 +22,7 @@ declare module "next-auth" {
   interface Session {
     user: DefaultSession["user"] & {
       id: string; // `DefaultSession` only has name, email, image
-      role: "CUSTOMER" | "EMPLOYEE";
+      role: "CUSTOMER" | "EMPLOYEE" | "ADMIN";
     };
   }
 }
@@ -35,6 +35,6 @@ declare module "next-auth/jwt" {
    */
   interface JWT {
     id: string;
-    role: "CUSTOMER" | "EMPLOYEE";
+    role: "CUSTOMER" | "EMPLOYEE" | "ADMIN";
   }
 }
