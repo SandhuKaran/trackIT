@@ -155,6 +155,20 @@ export const appRouter = router({
       })
     ),
 
+  // Gets all users for the admin edit-user dropdown
+  listAllUsers: adminProcedure.query(({ ctx }) =>
+    ctx.prisma.user.findMany({
+      orderBy: { name: "asc" },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        address: true,
+        role: true,
+      },
+    })
+  ),
+
   createCustomer: adminProcedure
     .input(
       z.object({
@@ -193,6 +207,57 @@ export const appRouter = router({
       });
 
       return newUser;
+    }),
+
+  updateUser: adminProcedure
+    .input(
+      z.object({
+        userId: z.string().cuid(),
+        name: z.string().min(2, "Name is too short"),
+        email: z.string().email("Invalid email"),
+        role: z.enum(["CUSTOMER", "EMPLOYEE", "ADMIN"]),
+        address: z.string().min(5, "Address is too short"),
+        // Password is optional. If not provided, it won't be updated.
+        password: z
+          .string()
+          .min(8, "Password must be at least 8 characters")
+          .optional(),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      // 1. Check for email conflict
+      // See if a *different* user already has this email
+      const existingUser = await ctx.prisma.user.findUnique({
+        where: { email: input.email },
+      });
+
+      if (existingUser && existingUser.id !== input.userId) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "A user with this email already exists.",
+        });
+      }
+
+      // 2. Hash password *if* it was provided
+      let hashedPassword: string | undefined = undefined;
+      if (input.password) {
+        hashedPassword = await bcrypt.hash(input.password, 10);
+      }
+
+      // 3. Update the user
+      const updatedUser = await ctx.prisma.user.update({
+        where: { id: input.userId },
+        data: {
+          name: input.name,
+          email: input.email,
+          address: input.address,
+          role: input.role,
+          // This will only update the password if hashedPassword is not undefined
+          password: hashedPassword,
+        },
+      });
+
+      return updatedUser;
     }),
 
   submitFeedback: protectedProcedure

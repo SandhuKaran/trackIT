@@ -84,12 +84,17 @@ export default function Dashboard() {
           {/* --- TAB 1: CUSTOMERS --- */}
           <TabsContent value="customers">
             <div className="mt-4">
-              {/* 👇 THIS BLOCK IS KEPT FOR ADMINS */}
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-semibold">Customers</h2>
-                <Button asChild size="sm">
-                  <Link href="/admin/add-customer">+ Add User</Link>
-                </Button>
+                {/* Wrapper for the buttons */}
+                <div className="flex gap-2">
+                  <Button asChild size="sm" variant="outline">
+                    <Link href="/admin/edit-user">Edit User</Link>
+                  </Button>
+                  <Button asChild size="sm">
+                    <Link href="/admin/add-customer">+ Add User</Link>
+                  </Button>
+                </div>
               </div>
 
               {/* Search Input */}
