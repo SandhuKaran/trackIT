@@ -140,7 +140,7 @@ export default function AddCustomerPage() {
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating...
               </>
             ) : (
-              "Create Customer"
+              "Create User"
             )}
           </Button>
 

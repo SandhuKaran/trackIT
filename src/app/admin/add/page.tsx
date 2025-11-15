@@ -33,7 +33,8 @@ const serviceOptions = [
   { id: "fertilization", label: "Fertilization" },
   { id: "weedControl", label: "Weed Control" },
   { id: "hedging", label: "Hedging" },
-  { id: "cleanup", label: "Spring/Fall Cleanup" },
+  { id: "springCleanup", label: "Spring Cleanup" },
+  { id: "fallCleanup", label: "Fall Cleanup" },
 ];
 
 export default function AddEntry() {
@@ -52,7 +53,8 @@ export default function AddEntry() {
     fertilization: false,
     weedControl: false,
     hedging: false,
-    cleanup: false,
+    springCleanup: false,
+    fallCleanup: false,
   });
 
   const [searchQuery, setSearchQuery] = useState("");

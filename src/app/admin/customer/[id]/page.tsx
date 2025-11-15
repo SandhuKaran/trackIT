@@ -1,6 +1,9 @@
 "use client";
 import { trpc } from "@/lib/trpc/client";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
+import { useState } from "react";
+import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 
 // Import Card components
 import {
@@ -14,8 +17,26 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RequestCard } from "@/components/ui/RequestCard";
 
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+
 export default function CustomerTimeline() {
   const params = useParams<{ id: string }>();
+  const router = useRouter();
+  const [isEditMode, setIsEditMode] = useState(false);
+  const utils = trpc.useUtils();
 
   if (!params) {
     return <p className="p-4">Loading customer...</p>;
@@ -40,6 +61,17 @@ export default function CustomerTimeline() {
     trpc.getRequestsByCustomer.useQuery({
       customerId: id,
     });
+
+  const deleteVisit = trpc.deleteVisit.useMutation({
+    onSuccess: () => {
+      toast.success("Visit deleted successfully.");
+      // Refresh the visits list by invalidating the tRPC query
+      utils.visitsByCustomer.invalidate({ customerId: id });
+    },
+    onError: (err) => {
+      toast.error("Failed to delete visit", { description: err.message });
+    },
+  });
 
   // MODIFIED: Show loading state if *any* query is fetching
   if (isLoadingVisits || isLoadingCustomer || isLoadingRequests) {
@@ -74,6 +106,16 @@ export default function CustomerTimeline() {
 
           {/* --- VISITS TAB CONTENT (Original Code) --- */}
           <TabsContent value="visits">
+            <div className="flex items-center justify-end space-x-2 my-4">
+              <Label htmlFor="edit-mode" className="text-white">
+                Edit Mode
+              </Label>
+              <Switch
+                id="edit-mode"
+                checked={isEditMode}
+                onCheckedChange={setIsEditMode}
+              />
+            </div>
             <div className="space-y-8 mt-4">
               {visits?.map((v) => (
                 <Card key={v.id} className="shadow-xl">
@@ -140,6 +182,60 @@ export default function CustomerTimeline() {
                             />
                           </a>
                         )}
+                      </div>
+                    )}
+                    {isEditMode && (
+                      <div className="flex gap-2 pt-4 border-t border-gray-700">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() =>
+                            router.push(`/admin/edit-visit/${v.id}`)
+                          }
+                          className="flex-1"
+                        >
+                          Edit
+                        </Button>
+
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              className="flex-1"
+                              disabled={deleteVisit.isPending}
+                            >
+                              {deleteVisit.isPending ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                "Delete"
+                              )}
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This will permanently delete the visit from{" "}
+                                {new Intl.DateTimeFormat("en-CA", {
+                                  dateStyle: "medium",
+                                }).format(new Date(v.date))}
+                                , along with all its photos and feedback. This
+                                action cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() =>
+                                  deleteVisit.mutate({ visitId: v.id })
+                                }
+                              >
+                                Continue
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </div>
                     )}
                   </CardContent>

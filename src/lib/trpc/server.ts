@@ -107,6 +107,29 @@ export const appRouter = router({
       })
     ),
 
+  getVisitById: adminProcedure
+    .input(z.object({ visitId: z.string().cuid() }))
+    .query(async ({ ctx, input }) => {
+      const visit = await ctx.prisma.visit.findUnique({
+        where: { id: input.visitId },
+        include: {
+          photos: true,
+          // We include the user to display their name
+          user: {
+            select: { name: true, id: true },
+          },
+        },
+      });
+
+      if (!visit) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Visit not found.",
+        });
+      }
+      return visit;
+    }),
+
   createVisit: staffProcedure
     .input(
       z.object({
@@ -135,6 +158,76 @@ export const appRouter = router({
         },
       })
     ),
+
+  updateVisit: adminProcedure
+    .input(
+      z.object({
+        visitId: z.string().cuid(),
+        note: z.string().min(2, "Write something"),
+        newPhotoUrls: z.array(z.string().url()).optional(),
+        photoIdsToDelete: z.array(z.string().cuid()).optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      // We use a transaction to make sure all changes succeed or fail together
+      return ctx.prisma.$transaction(async (tx) => {
+        // 1. Delete photos marked for deletion
+        if (input.photoIdsToDelete && input.photoIdsToDelete.length > 0) {
+          await tx.photo.deleteMany({
+            where: {
+              id: { in: input.photoIdsToDelete },
+              visitId: input.visitId, // Security check
+            },
+          });
+        }
+
+        // 2. Add new photos
+        if (input.newPhotoUrls && input.newPhotoUrls.length > 0) {
+          await tx.photo.createMany({
+            data: input.newPhotoUrls.map((url) => ({
+              url,
+              visitId: input.visitId,
+            })),
+          });
+        }
+
+        // 3. Update the visit's note and who signed it
+        const updatedVisit = await tx.visit.update({
+          where: { id: input.visitId },
+          data: {
+            note: input.note,
+            // Update the signature to show it was edited
+            signedBy: `${ctx.session.user.name} (Edited)`,
+          },
+        });
+
+        return updatedVisit;
+      });
+    }),
+
+  deleteVisit: adminProcedure
+    .input(z.object({ visitId: z.string().cuid() }))
+    .mutation(async ({ ctx, input }) => {
+      // Use a transaction to ensure all related data is deleted
+      return ctx.prisma.$transaction(async (tx) => {
+        // 1. Delete related feedback (one-to-one)
+        await tx.feedback.deleteMany({
+          where: { visitId: input.visitId },
+        });
+
+        // 2. Delete related photos (one-to-many)
+        await tx.photo.deleteMany({
+          where: { visitId: input.visitId },
+        });
+
+        // 3. Delete the visit itself
+        await tx.visit.delete({
+          where: { id: input.visitId },
+        });
+
+        return { success: true };
+      });
+    }),
 
   visitsByDate: staffProcedure
     .input(z.object({ date: z.date() }))
