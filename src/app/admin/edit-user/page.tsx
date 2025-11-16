@@ -61,6 +61,7 @@ export default function EditUserPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [role, setRole] = useState<"CUSTOMER" | "EMPLOYEE" | "ADMIN">(
     "CUSTOMER"
   );
@@ -119,6 +120,7 @@ export default function EditUserPage() {
     setAddress(user.address ?? ""); // Handle null address
     setRole(user.role);
     setPassword(""); // Clear password field
+    setConfirmPassword(""); // Clear confirm password field
     setSearchQuery(user.name); // Set input to user's name
     setIsListVisible(false); // Hide the list
     setError(null); // Clear errors
@@ -132,6 +134,11 @@ export default function EditUserPage() {
 
     setError(null);
 
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+
     updateUser.mutate({
       userId: selectedUserId,
       name,
@@ -142,6 +149,17 @@ export default function EditUserPage() {
       password: password || undefined,
     });
   }
+
+  const passwordCheckFailed =
+    // if user is typing a new password...
+    password.length > 0 &&
+    // ...it must be 8+ chars
+    (password.length < 8 ||
+      // ...and it must match the confirmation
+      password !== confirmPassword);
+
+  const passwordMismatch =
+    confirmPassword.length > 0 && password !== confirmPassword;
 
   return (
     <div className="min-h-screen bg-black text-white dark flex items-center justify-center p-4">
@@ -274,6 +292,20 @@ export default function EditUserPage() {
                 onChange={(e) => setPassword(e.target.value)}
               />
             </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="confirm-password">Confirm Password</Label>
+              <Input
+                id="confirm-password"
+                type="password"
+                placeholder="Confirm new password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+              />
+              {passwordMismatch && (
+                <p className="text-sm text-red-600">Passwords do not match</p>
+              )}
+            </div>
           </fieldset>
         </CardContent>
 
@@ -282,7 +314,10 @@ export default function EditUserPage() {
             type="button"
             className="w-full"
             disabled={
-              !selectedUserId || updateUser.isPending || deleteUser.isPending // Disable while deleting
+              !selectedUserId ||
+              updateUser.isPending ||
+              deleteUser.isPending ||
+              passwordCheckFailed // Disable while deleting
             }
             onClick={handleSubmit}
           >

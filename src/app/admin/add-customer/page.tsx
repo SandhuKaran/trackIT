@@ -30,11 +30,15 @@ export default function AddCustomerPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [role, setRole] = useState<"CUSTOMER" | "EMPLOYEE" | "ADMIN">(
     "CUSTOMER"
   );
   const [address, setAddress] = useState("");
   const [error, setError] = useState<string | null>(null);
+
+  const passwordMismatch =
+    confirmPassword.length > 0 && password !== confirmPassword;
 
   const createCustomer = trpc.createCustomer.useMutation({
     onSuccess: () => {
@@ -49,6 +53,12 @@ export default function AddCustomerPage() {
 
   function handleSubmit() {
     setError(null); // Clear old errors
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+
     createCustomer.mutate({ name, email, password, role, address });
   }
 
@@ -124,6 +134,20 @@ export default function AddCustomerPage() {
               onChange={(e) => setPassword(e.target.value)}
             />
           </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="confirm-password">Confirm Password</Label>
+            <Input
+              id="confirm-password"
+              type="password"
+              placeholder="Min 8 characters"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+            />
+            {passwordMismatch && (
+              <p className="text-sm text-red-600">Passwords do not match</p>
+            )}
+          </div>
         </CardContent>
 
         <CardFooter className="flex flex-col gap-2">
@@ -131,7 +155,11 @@ export default function AddCustomerPage() {
             type="button"
             className="w-full"
             disabled={
-              !name || !email || password.length < 8 || createCustomer.isPending
+              !name ||
+              !email ||
+              password.length < 8 ||
+              createCustomer.isPending ||
+              password !== confirmPassword
             }
             onClick={handleSubmit}
           >
