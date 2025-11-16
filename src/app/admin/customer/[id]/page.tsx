@@ -5,7 +5,6 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
-// Import Card components
 import {
   Card,
   CardContent,
@@ -13,7 +12,6 @@ import {
   CardHeader,
 } from "@/components/ui/card";
 
-// NEW: Import Tabs and RequestCard
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RequestCard } from "@/components/ui/RequestCard";
 
@@ -44,19 +42,19 @@ export default function CustomerTimeline() {
 
   const { id } = params;
 
-  // Query 1: Get all visits for this customer (existing)
+  // Query 1: Get all visits for this customer
   const { data: visits, isLoading: isLoadingVisits } =
     trpc.visitsByCustomer.useQuery({
       customerId: id,
     });
 
-  // Query 2: Get this customer's details (existing)
+  // Query 2: Get this customer's details
   const { data: customer, isLoading: isLoadingCustomer } =
     trpc.customerById.useQuery({
       id: id,
     });
 
-  // Query 3: Get requests (NEW)
+  // Query 3: Get requests
   const { data: requests, isLoading: isLoadingRequests } =
     trpc.getRequestsByCustomer.useQuery({
       customerId: id,
@@ -83,7 +81,7 @@ export default function CustomerTimeline() {
     },
   });
 
-  // MODIFIED: Show loading state if *any* query is fetching
+  // Show loading state if *any* query is fetching
   if (isLoadingVisits || isLoadingCustomer || isLoadingRequests) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-black text-white dark p-4">
@@ -97,17 +95,15 @@ export default function CustomerTimeline() {
     : null;
 
   return (
-    // Apply dark theme wrapper
     <div className="min-h-screen bg-black text-white dark">
       <main className="p-4 max-w-lg m-auto">
-        {/* MODIFIED: Updated header to show name and email */}
         <h1 className="text-2xl font-semibold mb-2 text-center pt-6">
           {customer?.name ?? "Customer"}
         </h1>
         <p className="text-center text-gray-400 mb-1">{customer?.address}</p>
         <p className="text-center text-gray-400 mb-6">{customer?.email}</p>
 
-        {/* --- NEW TABS WRAPPER --- */}
+        {/* --- TABS WRAPPER --- */}
         <Tabs defaultValue="visits" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="visits">
@@ -118,7 +114,7 @@ export default function CustomerTimeline() {
             </TabsTrigger>
           </TabsList>
 
-          {/* --- VISITS TAB CONTENT (Original Code) --- */}
+          {/* --- VISITS TAB CONTENT --- */}
           <TabsContent value="visits">
             <div className="flex items-center justify-end space-x-2 my-4">
               <Label htmlFor="edit-mode" className="text-white">
@@ -172,13 +168,20 @@ export default function CustomerTimeline() {
                     )}
                     {v.feedback && (
                       <div className="pt-4 border-t border-gray-700 space-y-3">
-                        <p className="font-semibold text-white">
-                          Customer Feedback:
-                        </p>
+                        <div className="flex justify-between items-center">
+                          <p className="font-semibold text-white">
+                            Customer Feedback:
+                          </p>
+                          <p className="text-xs text-gray-400">
+                            {new Intl.DateTimeFormat("en-CA", {
+                              dateStyle: "medium",
+                              timeStyle: "short",
+                            }).format(new Date(v.feedback.createdAt))}
+                          </p>
+                        </div>
                         <p className="text-gray-300 italic">
                           {v.feedback.text}
                         </p>
-                        {/* This includes the feedback photo fix from our last feature */}
                         {v.feedback.photoUrl && (
                           <a
                             href={v.feedback.photoUrl}

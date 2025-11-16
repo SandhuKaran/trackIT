@@ -38,7 +38,7 @@ export default function AddRequest() {
       } catch (error) {
         console.error("Failed to upload request image", error);
         setUploading(false);
-        // TODO: Show user an error
+        // TODO: Show user an error. Still have to do it.
         return;
       }
       setUploading(false);
@@ -105,8 +105,8 @@ export default function AddRequest() {
             {uploading
               ? "Uploading…"
               : createRequest.isPending
-              ? "Saving…"
-              : "Submit Request"}
+                ? "Saving…"
+                : "Submit Request"}
           </Button>
 
           {createRequest.error && (

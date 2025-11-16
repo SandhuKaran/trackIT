@@ -1,8 +1,7 @@
-// Import the default types
 import type { DefaultSession, DefaultUser } from "next-auth";
 import type { JWT } from "next-auth/jwt";
 
-// ❶  Augment the `User` type
+// Augment the `User` type
 declare module "next-auth" {
   /**
    * This extends the `User` object returned from the `authorize` callback.
@@ -10,7 +9,7 @@ declare module "next-auth" {
    */
   interface User extends DefaultUser {
     role: "CUSTOMER" | "EMPLOYEE" | "ADMIN";
-    // You can add any other properties you return from `authorize` here
+    // Can add any other properties returned from `authorize` here
     // e.g., id: string; (though DefaultUser already has id)
   }
 
@@ -27,7 +26,7 @@ declare module "next-auth" {
   }
 }
 
-// ❷  Augment the `JWT` type
+// Augment the `JWT` type
 declare module "next-auth/jwt" {
   /**
    * This extends the token object (what's stored in the JWT).

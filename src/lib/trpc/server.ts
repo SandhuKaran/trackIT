@@ -7,6 +7,8 @@ import bcrypt from "bcryptjs";
 
 const t = initTRPC.context<Context>().create({ transformer: superjson });
 
+import { sendVisitNotification } from "@/lib/emailService";
+
 /* ───────── Base helpers ───────── */
 export const router = t.router;
 export const publicProcedure = t.procedure;
@@ -139,15 +141,14 @@ export const appRouter = router({
         date: z.date().optional(), // defaults to Now if omitted
       })
     )
-    .mutation(({ input, ctx }) =>
-      // MODIFIED: Use a nested write to create the visit and photos together
-      ctx.prisma.visit.create({
+    .mutation(async ({ input, ctx }) => {
+      // 1. Create the visit as before
+      const newVisit = await ctx.prisma.visit.create({
         data: {
           userId: input.customerId,
           note: input.note,
           date: input.date ?? new Date(),
           signedBy: ctx.session?.user?.name ?? "Staff",
-          // This block creates all the related photos
           photos: input.photoUrls
             ? {
                 createMany: {
@@ -156,8 +157,25 @@ export const appRouter = router({
               }
             : undefined,
         },
-      })
-    ),
+        include: {
+          user: {
+            select: { email: true, name: true },
+          },
+        },
+      });
+
+      // ✨ 2. Call the dedicated email service.
+      // This is "fire and forget" (no 'await') so the API
+      // returns immediately to the client without waiting
+      // for the email to send.
+      sendVisitNotification({
+        user: newVisit.user,
+        visitId: newVisit.id,
+      });
+
+      // 3. Return the new visit data to the client
+      return newVisit;
+    }),
 
   updateVisit: adminProcedure
     .input(
@@ -445,6 +463,38 @@ export const appRouter = router({
           photoUrl: input.photoUrl ?? null,
         },
       });
+    }),
+
+  deleteFeedback: protectedProcedure
+    .input(
+      z.object({
+        // The feedback is uniquely linked to the visit, so visitId is all we need
+        visitId: z.string().cuid(),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      // 1. Security Check: Find the visit and ensure it belongs to the logged-in user.
+      const visit = await ctx.prisma.visit.findFirst({
+        where: {
+          id: input.visitId,
+          userId: ctx.session.user.id,
+        },
+        select: { id: true }, // We only need to confirm it exists
+      });
+
+      if (!visit) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+
+      // 2. Delete the feedback associated with that visit.
+      // This works because the `visitId` field on Feedback is @unique.
+      await ctx.prisma.feedback.delete({
+        where: {
+          visitId: input.visitId,
+        },
+      });
+
+      return { success: true };
     }),
 
   getRecentFeedbacks: staffProcedure.query(({ ctx }) => {

@@ -15,14 +15,25 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2 } from "lucide-react";
+import { Loader2, Trash2 } from "lucide-react";
 
 import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "@/lib/trpc/server";
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+
 type VisitFromTRPC = inferRouterOutputs<AppRouter>["getVisits"][number];
 
-// Define the props for our component
 interface VisitCardProps {
   visit: VisitFromTRPC; // Use the new inferred type
 }
@@ -35,7 +46,7 @@ export function VisitCard({ visit }: VisitCardProps) {
 
   const submitFeedback = trpc.submitFeedback.useMutation({
     onSuccess: () => {
-      // This is the key: it re-fetches the server component's data
+      // This re-fetches the server component's data
       // so the page updates to show the new feedback.
       router.refresh();
       setIsExpanded(false);
@@ -44,17 +55,29 @@ export function VisitCard({ visit }: VisitCardProps) {
     },
   });
 
+  const deleteFeedback = trpc.deleteFeedback.useMutation({
+    onSuccess: () => {
+      // Re-fetches data, component re-renders,
+      // and the "Add Feedback" button will reappear
+      router.refresh();
+    },
+    onError: (err) => {
+      // TODO : Show a stupid toast error here i dont like to do it
+      console.error("Failed to delete feedback:", err.message);
+    },
+  });
+
   const handleSubmit = async () => {
     let photoUrl: string | undefined;
 
-    // 1. Handle file upload if one exists
+    // Handle file upload if one exists
     if (file) {
       setIsUploading(true);
       try {
         photoUrl = await uploadImage(file);
       } catch (error) {
         console.error("Failed to upload feedback image", error);
-        // TODO: Show an error message to the user (e.g., using toast)
+        // TODO : Show a stupid toast error here i dont like to do it
         setIsUploading(false);
         return; // Stop submission
       }
@@ -85,7 +108,7 @@ export function VisitCard({ visit }: VisitCardProps) {
         )}
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* The original visit info */}
+        {/* Visit info */}
         <p className="whitespace-pre-wrap">{visit.note}</p>
         {visit.photos && visit.photos.length > 0 && (
           <div className="grid grid-cols-2 gap-2">
@@ -107,14 +130,63 @@ export function VisitCard({ visit }: VisitCardProps) {
           </div>
         )}
 
-        {/* --- THIS IS THE NEW FEEDBACK SECTION --- */}
+        {/* --- FEEDBACK SECTION --- */}
         {visit.feedback ? (
           // 1. Feedback already exists: Display it
           <div className="pt-4 border-t border-gray-700 space-y-3">
-            <p className="font-semibold text-white">Your Feedback:</p>
+            <div className="flex justify-between items-center">
+              <p className="font-semibold text-white">Your Feedback:</p>
+
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-gray-400 hover:text-red-500" // Sleek style
+                    disabled={deleteFeedback.isPending}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will permanently delete your feedback for the visit
+                      on{" "}
+                      {new Intl.DateTimeFormat("en-CA", {
+                        dateStyle: "medium",
+                      }).format(new Date(visit.date))}
+                      . This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() =>
+                        deleteFeedback.mutate({ visitId: visit.id })
+                      }
+                      disabled={deleteFeedback.isPending}
+                    >
+                      {deleteFeedback.isPending ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        "Delete"
+                      )}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+              <p className="text-xs text-gray-400">
+                {new Intl.DateTimeFormat("en-CA", {
+                  dateStyle: "medium",
+                  timeStyle: "short",
+                }).format(new Date(visit.feedback.createdAt))}
+              </p>
+            </div>
             <p className="text-gray-300 italic">{visit.feedback.text}</p>
 
-            {/* --- THIS IS THE DISPLAY FOR THE NEW IMAGE --- */}
+            {/* --- THIS IS THE DISPLAY FOR THE IMAGE --- */}
             {visit.feedback.photoUrl && (
               <a
                 href={visit.feedback.photoUrl}
@@ -134,7 +206,7 @@ export function VisitCard({ visit }: VisitCardProps) {
             )}
           </div>
         ) : isExpanded ? (
-          // 2. Add Feedback form is expanded: Show form
+          // Feedback form is expanded: Show form
           <div className="space-y-3 pt-2">
             <Textarea
               placeholder="How did we do? Let us know..."
@@ -142,7 +214,7 @@ export function VisitCard({ visit }: VisitCardProps) {
               onChange={(e) => setFeedback(e.target.value)}
             />
 
-            {/* --- THIS IS THE NEW FILE INPUT --- */}
+            {/* --- THIS IS THE FILE INPUT --- */}
             <div className="grid gap-1.5">
               <Label htmlFor={`photo-upload-${visit.id}`}>
                 Add Photo (Optional)
@@ -154,39 +226,37 @@ export function VisitCard({ visit }: VisitCardProps) {
                 onChange={(e) => setFile(e.target.files?.[0] ?? null)}
               />
             </div>
-            {/* --- END OF NEW FILE INPUT --- */}
+            {/* --- END OF FILE INPUT --- */}
 
             <div className="flex justify-end gap-2">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setIsExpanded(false)}
-                disabled={submitFeedback.isPending || isUploading} // <-- MODIFIED
+                disabled={submitFeedback.isPending || isUploading}
               >
                 Cancel
               </Button>
               <Button
                 size="sm"
                 onClick={handleSubmit}
-                // MODIFIED: Disable button if uploading OR submitting
                 disabled={
                   feedback.length < 3 || submitFeedback.isPending || isUploading
                 }
               >
-                {(submitFeedback.isPending || isUploading) && ( // <-- MODIFIED
+                {(submitFeedback.isPending || isUploading) && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 )}
-                {/* MODIFIED: Show different loading text */}
                 {isUploading
                   ? "Uploading..."
                   : submitFeedback.isPending
-                  ? "Submitting..."
-                  : "Submit"}
+                    ? "Submitting..."
+                    : "Submit"}
               </Button>
             </div>
           </div>
         ) : (
-          // 3. No feedback yet: Show the "Add Feedback" button
+          // No feedback yet: Show the "Add Feedback" button
           <CardFooter className="p-0 pt-4">
             <Button variant="outline" onClick={() => setIsExpanded(true)}>
               Add Feedback

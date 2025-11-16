@@ -3,7 +3,6 @@ import { trpc } from "@/lib/trpc/client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-// Import all the UI components
 import {
   Card,
   CardContent,

@@ -1,7 +1,7 @@
 "use client";
 
-import { useTransition, useState } from "react"; // 1: Import useState
-import { useRouter } from "next/navigation"; // 2: Import useRouter
+import { useTransition, useState } from "react";
+import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import {
   Card,
@@ -18,8 +18,8 @@ import { Loader2 } from "lucide-react";
 
 export default function LoginPage() {
   const [isPending, startTransition] = useTransition();
-  const router = useRouter(); // 3: Get the router
-  const [error, setError] = useState<string | null>(null); // 4: Add error state
+  const router = useRouter();
+  const [error, setError] = useState<string | null>(null);
 
   async function handle(formData: FormData) {
     const email = formData.get("email") as string;
@@ -28,14 +28,13 @@ export default function LoginPage() {
     setError(null); // Clear any old errors
 
     startTransition(async () => {
-      // 5: Get the 'result' from signIn
       const result = await signIn("credentials", {
         email,
         password,
-        redirect: false, // 6: Tell NextAuth NOT to redirect
+        redirect: false,
       });
 
-      // 7: Check the result
+      // Check the result
       if (result && !result.ok) {
         // We got an error, show it
         setError("Sign in failed. Check the details you provided are correct.");
@@ -47,7 +46,13 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-black text-white dark p-4">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-black text-white dark p-4">
+      <div className="text-center mb-12">
+        <h1 className="text-3xl font-semibold mb-3">
+          Welcome to GNW visit tracking app
+        </h1>
+        <p className="text-md text-gray-400">Access all your visits and more</p>
+      </div>
       <Card className="w-full max-w-md shadow-xl">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl">Login to your account</CardTitle>
@@ -56,7 +61,7 @@ export default function LoginPage() {
           </CardDescription>
         </CardHeader>
 
-        {/* 8: Render the error message */}
+        {/* Render the error message */}
         {error && (
           <div className="mx-6 p-3 bg-red-900/50 text-red-100 border border-red-800 rounded-md">
             {error}
@@ -65,7 +70,6 @@ export default function LoginPage() {
 
         <form action={handle}>
           <CardContent className="grid gap-4 pt-6">
-            {/* ... (rest of your form is perfect) ... */}
             <div className="grid gap-2">
               <Label htmlFor="email">Email</Label>
               <Input

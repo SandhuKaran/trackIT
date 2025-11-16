@@ -4,17 +4,17 @@ import bcrypt from "bcryptjs";
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log("🌱 Starting seed script..."); // 👈 ADDED LOG
+  console.log("Starting seed script...");
 
   // ───────────────────────────────────────────────────────────
   // 1  Create / update the two users with hashed passwords
   // ───────────────────────────────────────────────────────────
-  console.log("Hashing passwords..."); // 👈 ADDED LOG
+  console.log("Hashing passwords...");
   const karanHash = await bcrypt.hash("karan", 10);
   const aliceHash = await bcrypt.hash("alice", 10);
   const crewHash = await bcrypt.hash("crewsecret", 10);
 
-  console.log("Creating users..."); // 👈 ADDED LOG
+  console.log("Creating users...");
   const karan = await prisma.user.upsert({
     where: { email: "karan@example.com" },
     update: { name: "Karan" },
@@ -24,7 +24,7 @@ async function main() {
       name: "Karan",
     },
   });
-  console.log("Created karan:", karan); // 👈 ADDED LOG
+  console.log("Created karan:", karan);
 
   const alice = await prisma.user.upsert({
     where: { email: "alice@example.com" },
@@ -35,7 +35,7 @@ async function main() {
       name: "Alice",
     },
   });
-  console.log("Created alice:", alice); // 👈 ADDED LOG
+  console.log("Created alice:", alice);
 
   const crew = await prisma.user.upsert({
     where: { email: "crew@company.com" },
@@ -47,16 +47,15 @@ async function main() {
       name: "Crew",
     },
   });
-  console.log("Created crew:", crew); // 👈 ADDED LOG
+  console.log("Created crew:", crew);
 
   // ───────────────────────────────────────────────────────────
   // 2  Insert visit records for each user
   // ───────────────────────────────────────────────────────────
-  console.log("Creating visits..."); // 👈 ADDED LOG
+  console.log("Creating visits...");
   await prisma.visit.createMany({
     skipDuplicates: true,
     data: [
-      // ... (your visit data) ...
       {
         date: new Date("2025-05-13"),
         note: "Weekly grass cutting, hedge trim, edging. Signed by Alice",
@@ -79,16 +78,16 @@ async function main() {
       },
     ],
   });
-  console.log("Visits created."); // 👈 ADDED LOG
+  console.log("Visits created.");
 }
 
 main()
   .then(async () => {
-    console.log("✅ Seed script finished successfully."); // 👈 ADDED LOG
+    console.log("✅ Seed script finished successfully.");
     await prisma.$disconnect();
   })
   .catch(async (err) => {
-    console.error("❌ Error in seed script:", err); // 👈 ADDED LOG
+    console.error("❌ Error in seed script:", err);
     await prisma.$disconnect();
     process.exit(1);
   });

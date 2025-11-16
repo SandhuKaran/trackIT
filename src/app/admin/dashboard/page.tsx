@@ -13,7 +13,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function Dashboard() {
   const router = useRouter();
-  // 👇 These tRPC queries work because of `staffProcedure`
   const { data: customers, isLoading: isLoadingCustomers } =
     trpc.listCustomers.useQuery();
   const { data: feedbacks, isLoading: isLoadingFeedbacks } =
@@ -54,10 +53,10 @@ export default function Dashboard() {
     <div className="min-h-screen bg-black text-white dark">
       <main className="p-4 max-w-lg m-auto">
         <h1 className="text-2xl font-semibold text-center pt-6 mb-6">
-          Admin Dashboard {/* 👈 UPDATED title */}
+          Admin Dashboard
         </h1>
 
-        {/* --- Action Buttons (Remain outside tabs) --- */}
+        {/* --- Action Buttons --- */}
         <div className="grid grid-cols-2 gap-4">
           <Button asChild className="w-full">
             <Link href="/admin/add">+ Add New Visit</Link>
@@ -67,7 +66,7 @@ export default function Dashboard() {
           </Button>
         </div>
 
-        {/* --- NEW TABS WRAPPER --- */}
+        {/* --- TABS WRAPPER --- */}
         <Tabs defaultValue="customers" className="w-full mt-8">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="customers">
@@ -146,14 +145,12 @@ export default function Dashboard() {
             <div className="space-y-8 mt-4">
               {feedbacks?.map((fb) => (
                 <Link
-                  // 👈 UPDATED Link
                   href={`/admin/customer/${fb.visit.userId}`}
                   key={fb.id}
                   className="block"
                 >
                   <Card className="shadow-xl hover:bg-gray-900 transition-colors">
                     <CardContent className="p-4">
-                      {/* ... (rest of feedback card is identical) ... */}
                       <p className="italic text-gray-200">{fb.text}</p>
                       {fb.photoUrl && (
                         <img
@@ -165,16 +162,27 @@ export default function Dashboard() {
                           className="w-full h-auto object-cover rounded-md mt-2"
                         />
                       )}
-                      <div className="flex justify-between items-center mt-3 text-sm">
-                        <span className="font-semibold text-white">
+                      <div className="mt-4 pt-3 border-t border-gray-700">
+                        <span className="font-semibold text-white text-sm">
                           - {fb.visit.user.name}{" "}
                           <span className="text-gray-400 font-normal">
                             ({fb.visit.user.address})
                           </span>
                         </span>
-                        <span className="text-gray-400">
+                      </div>
+                      <div className="mt-2 flex flex-col text-xs text-gray-400">
+                        <span>
+                          Submitted:{" "}
                           {new Intl.DateTimeFormat("en-CA", {
                             dateStyle: "medium",
+                            timeStyle: "short",
+                          }).format(new Date(fb.createdAt))}
+                        </span>
+                        <span className="mt-1">
+                          Visited:{" "}
+                          {new Intl.DateTimeFormat("en-CA", {
+                            dateStyle: "medium",
+                            timeStyle: "short",
                           }).format(new Date(fb.visit.date))}
                         </span>
                       </div>
@@ -196,11 +204,9 @@ export default function Dashboard() {
                 >
                   <CardContent className="p-4">
                     <Link
-                      // 👈 UPDATED Link
                       href={`/admin/customer/${req.user.id}`}
                       className="block"
                     >
-                      {/* ... (rest of request card is identical) ... */}
                       <p className="font-semibold text-white">{req.title}</p>
                       <p className="italic text-gray-200 truncate">
                         {req.description}
@@ -215,23 +221,26 @@ export default function Dashboard() {
                           className="w-full h-auto object-cover rounded-md mt-2"
                         />
                       )}
-                      <div className="flex justify-between items-center mt-3 text-sm">
+                      <div className="mt-3 text-sm">
                         <span className="font-semibold text-white">
                           - {req.user.name}{" "}
                           <span className="text-gray-400 font-normal">
                             ({req.user.address})
                           </span>
                         </span>
-                        <span className="text-gray-400">
-                          {new Intl.DateTimeFormat("en-CA", {
-                            dateStyle: "medium",
-                          }).format(new Date(req.createdAt))}
-                        </span>
                       </div>
                     </Link>
 
                     <div className="pt-3 mt-3 border-t border-gray-700">
-                      {/* ... (resolve logic is identical) ... */}
+                      <div className="flex text-xs text-gray-400 mb-3">
+                        <span>
+                          Requested:{" "}
+                          {new Intl.DateTimeFormat("en-CA", {
+                            dateStyle: "medium",
+                            timeStyle: "short",
+                          }).format(new Date(req.createdAt))}
+                        </span>
+                      </div>
                       {req.resolvedBy ? (
                         <div className="flex items-center gap-2 text-green-400">
                           <CheckCircle className="h-4 w-4" />

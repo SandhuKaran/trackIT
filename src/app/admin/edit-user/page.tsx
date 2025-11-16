@@ -8,7 +8,6 @@ import type { AppRouter } from "@/lib/trpc/server";
 import type { inferRouterOutputs } from "@trpc/server";
 import { useSession } from "next-auth/react";
 
-// Import all the UI components
 import {
   Card,
   CardContent,
@@ -56,7 +55,6 @@ export default function EditUserPage() {
   const router = useRouter();
   const { data: session } = useSession();
 
-  // State for the form
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -87,8 +85,8 @@ export default function EditUserPage() {
     },
     onError: (err) => {
       setError(err.message);
-      // You could also show an error toast here
-      // toast.error(err.message);
+      // I still have to add error toast here
+      // But do we care
     },
   });
 
@@ -181,6 +179,7 @@ export default function EditUserPage() {
             >
               <CommandInput
                 id="customer-search"
+                className="text-base"
                 placeholder="Search by name or email..."
                 value={searchQuery}
                 onValueChange={(search) => {
@@ -330,7 +329,7 @@ export default function EditUserPage() {
             )}
           </Button>
 
-          {/* --- NEW DELETE BUTTON --- */}
+          {/* --- DELETE BUTTON --- */}
           {/* Only show if a user is selected AND it's not the current admin */}
           {selectedUserId && session?.user?.id !== selectedUserId && (
             <AlertDialog>
@@ -356,9 +355,8 @@ export default function EditUserPage() {
                   <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                   <AlertDialogDescription>
                     This action cannot be undone. This will permanently delete
-                    the user <strong className="text-black">{name}</strong> and
-                    all their associated data, including visits, requests, and
-                    photos.
+                    the user <strong>{name}</strong> and all their associated
+                    data, including visits, requests, and photos.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>

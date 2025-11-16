@@ -112,7 +112,6 @@ export default function AddEntry() {
   }
 
   async function handleSubmit() {
-    // ... (handleSubmit logic is unchanged) ...
     const checkedLabels = serviceOptions
       .filter((service) => services[service.id as keyof typeof services])
       .map((service) => service.label);
@@ -129,7 +128,7 @@ export default function AddEntry() {
       finalNote += `Work Notes: ${customNote.trim()}`;
     }
 
-    let photoUrls: string[] = []; // Now an array
+    let photoUrls: string[] = [];
     if (files.length > 0) {
       setUploading(true);
       // Create an array of upload promises
@@ -157,13 +156,10 @@ export default function AddEntry() {
         <CardContent className="grid gap-4">
           <div className="grid gap-2">
             <Label htmlFor="customer-search">Customer</Label>
-            <Command
-              // MODIFIED: Add `overflow-visible` to prevent clipping
-              className="relative overflow-visible"
-              filter={() => 1}
-            >
+            <Command className="relative overflow-visible" filter={() => 1}>
               <CommandInput
                 id="customer-search"
+                className="text-base"
                 placeholder="Search by name or email or address..."
                 value={
                   selectedCustomerName && !isListVisible
@@ -180,7 +176,6 @@ export default function AddEntry() {
               />
               <CommandList
                 className={cn(
-                  // MODIFIED: Increased z-index to `z-50`
                   "absolute top-full z-50 mt-1 w-full rounded-md border bg-black shadow-lg",
                   isListVisible ? "block" : "hidden"
                 )}
@@ -256,7 +251,7 @@ export default function AddEntry() {
               id="photo-upload"
               type="file"
               accept="image/*"
-              multiple // <-- ADD THIS
+              multiple
               onChange={(e) => {
                 if (e.target.files) {
                   setFiles((prev) => [...prev, ...Array.from(e.target.files!)]);
@@ -267,7 +262,7 @@ export default function AddEntry() {
             />
           </div>
 
-          {/* NEW: Image Preview Grid */}
+          {/* Image Preview Grid */}
           {filePreviews.length > 0 && (
             <div className="grid grid-cols-3 gap-2">
               {filePreviews.map((previewUrl, index) => (
@@ -310,8 +305,8 @@ export default function AddEntry() {
             {uploading
               ? "Uploading…"
               : createVisit.isPending
-              ? "Saving…"
-              : "Add Entry"}
+                ? "Saving…"
+                : "Add Entry"}
           </Button>
 
           {createVisit.error && (

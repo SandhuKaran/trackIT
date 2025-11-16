@@ -16,7 +16,7 @@ export default async function AdminLayout({
 
   // 2. Check if user is an ADMIN
   if (session.user.role !== "ADMIN") {
-    // You can redirect to their appropriate dashboard or an "unauthorized" page
+    // Redirect to their appropriate dashboard or an "unauthorized" page
     if (session.user.role === "EMPLOYEE") {
       redirect("/employee/dashboard");
     }

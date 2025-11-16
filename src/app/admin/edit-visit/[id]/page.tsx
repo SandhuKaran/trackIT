@@ -6,7 +6,6 @@ import { uploadImage } from "@/lib/cloudinaryUpload";
 import { Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 
-// Import UI components
 import {
   Card,
   CardContent,
@@ -21,7 +20,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 
-// Define service options (same as your add page)
+// Define service options
 const serviceOptions = [
   { id: "lawnMowing", label: "Lawn Mowing" },
   { id: "fertilization", label: "Fertilization" },
@@ -140,7 +139,7 @@ export default function EditVisitPage() {
     URL.revokeObjectURL(newFilePreviews[index]);
   };
 
-  // NEW: Mark an existing photo for deletion
+  // Mark an existing photo for deletion
   const removeExistingPhoto = (photoId: string) => {
     setPhotoIdsToDelete((prev) => [...prev, photoId]);
     setExistingPhotos((prev) => prev.filter((p) => p.id !== photoId));
@@ -168,7 +167,7 @@ export default function EditVisitPage() {
       });
       return; // Stop the function here
     }
-    // Re-combine services and note (same as add page)
+    // Re-combine services and note
     const checkedLabels = serviceOptions
       .filter((service) => services[service.id as keyof typeof services])
       .map((service) => service.label);
@@ -184,7 +183,7 @@ export default function EditVisitPage() {
       finalNote += `Work Notes: ${customNote.trim()}`;
     }
 
-    // Upload NEW photos (same as add page)
+    // Upload NEW photos
     let newPhotoUrls: string[] = [];
     if (files.length > 0) {
       setUploading(true);
@@ -227,7 +226,7 @@ export default function EditVisitPage() {
             <Input value={visitData.user.name} disabled />
           </div>
 
-          {/* Services (same as add page) */}
+          {/* Services */}
           <div className="grid gap-2">
             <Label>Services Performed</Label>
             <div className="grid grid-cols-2 gap-4 rounded-lg border p-4">
@@ -251,7 +250,7 @@ export default function EditVisitPage() {
             </div>
           </div>
 
-          {/* Work Notes (same as add page) */}
+          {/* Work Notes */}
           <div className="grid gap-2">
             <Label htmlFor="note-textarea">Work Notes</Label>
             <Textarea
@@ -265,7 +264,7 @@ export default function EditVisitPage() {
 
           {/* --- Photo Section --- */}
 
-          {/* NEW: Existing Photos */}
+          {/* Existing Photos */}
           {existingPhotos.length > 0 && (
             <div className="grid gap-2">
               <Label>Existing Photos</Label>
@@ -295,7 +294,7 @@ export default function EditVisitPage() {
             </div>
           )}
 
-          {/* Add New Photos (same as add page) */}
+          {/* Add New Photos */}
           <div className="grid gap-2">
             <Label htmlFor="photo-upload">Add New Photos</Label>
             <Input
@@ -312,7 +311,7 @@ export default function EditVisitPage() {
             />
           </div>
 
-          {/* New File Previews (same as add page) */}
+          {/* File Previews */}
           {newFilePreviews.length > 0 && (
             <div className="grid grid-cols-3 gap-2">
               {newFilePreviews.map((previewUrl, index) => (
@@ -354,8 +353,8 @@ export default function EditVisitPage() {
             {uploading
               ? "Uploading…"
               : updateVisit.isPending
-              ? "Saving Changes…"
-              : "Save Changes"}
+                ? "Saving Changes…"
+                : "Save Changes"}
           </Button>
 
           {updateVisit.error && (

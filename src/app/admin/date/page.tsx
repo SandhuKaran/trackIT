@@ -1,7 +1,7 @@
 "use client";
 import { trpc } from "@/lib/trpc/client";
 import React from "react";
-// MODIFIED: Import `parse` for robust date string conversion
+// `parse` for robust date string conversion
 import { format, subDays, addDays, isSameDay, parse } from "date-fns";
 import { CalendarIcon, Loader2 } from "lucide-react";
 
@@ -62,7 +62,7 @@ export default function VisitsByDate() {
   const tomorrow = addDays(date, 1);
 
   // Store the date format string to ensure consistency
-  const dateFormat = "yyyy-MM-dd"; // <-- NEW
+  const dateFormat = "yyyy-MM-dd";
 
   const formatTabDate = (d: Date) => {
     const today = new Date();
@@ -72,7 +72,7 @@ export default function VisitsByDate() {
     return format(d, "MMM d");
   };
 
-  // NEW: Handler for when a tab is clicked
+  // Handler for when a tab is clicked
   const handleTabChange = (value: string) => {
     // Parse the date string (e.g., "2025-11-12") back into a Date object
     // We use `parse` from date-fns for a robust, timezone-safe conversion.
@@ -114,12 +114,12 @@ export default function VisitsByDate() {
               <Calendar
                 mode="single"
                 selected={date}
-                month={viewedMonth} // NEW: Control the displayed month
-                onMonthChange={setViewedMonth} // NEW: Allow user to change month
+                month={viewedMonth} // Control the displayed month
+                onMonthChange={setViewedMonth} // Allow user to change month
                 onSelect={(newDate) => {
                   if (newDate) {
                     setDate(newDate);
-                    setViewedMonth(newDate); // NEW: Update viewed month on select
+                    setViewedMonth(newDate); // Update viewed month on select
                   }
                   setOpen(false);
                 }}
@@ -129,13 +129,13 @@ export default function VisitsByDate() {
           </Popover>
         </div>
 
-        {/* --- 3-TAB LAYOUT (Now Dynamic) --- */}
+        {/* --- 3-TAB LAYOUT --- */}
         <Tabs
-          // MODIFIED: Use the consistent date format
+          // Use the consistent date format
           defaultValue={format(date, dateFormat)}
           key={date.toString()} // This key is crucial for re-rendering
           className="w-full"
-          // NEW: Add the onValueChange handler
+          // Add the onValueChange handler
           onValueChange={handleTabChange}
         >
           <TabsList className="grid w-full grid-cols-3">
@@ -150,7 +150,6 @@ export default function VisitsByDate() {
             </TabsTrigger>
           </TabsList>
 
-          {/* These content sections will now be for the *new* dates */}
           <TabsContent value={format(yesterday, dateFormat)} className="mt-4">
             <VisitList date={yesterday} />
           </TabsContent>
