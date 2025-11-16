@@ -164,7 +164,7 @@ export default function AddEntry() {
             >
               <CommandInput
                 id="customer-search"
-                placeholder="Search by name or email..."
+                placeholder="Search by name or email or address..."
                 value={
                   selectedCustomerName && !isListVisible
                     ? selectedCustomerName

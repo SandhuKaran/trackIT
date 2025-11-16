@@ -229,6 +229,15 @@ export const appRouter = router({
       });
     }),
 
+  deleteRequest: adminProcedure
+    .input(z.object({ requestId: z.string().cuid() }))
+    .mutation(async ({ ctx, input }) => {
+      await ctx.prisma.request.delete({
+        where: { id: input.requestId },
+      });
+      return { success: true };
+    }),
+
   visitsByDate: staffProcedure
     .input(z.object({ date: z.date() }))
     .query(({ input, ctx }) =>
@@ -351,6 +360,57 @@ export const appRouter = router({
       });
 
       return updatedUser;
+    }),
+
+  deleteUser: adminProcedure
+    .input(z.object({ userId: z.string().cuid() }))
+    .mutation(async ({ ctx, input }) => {
+      // Safety check: Prevent an admin from deleting their own account
+      if (ctx.session.user.id === input.userId) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You cannot delete your own account.",
+        });
+      }
+
+      // Use a transaction to delete all related data
+      return ctx.prisma.$transaction(async (tx) => {
+        // 1. Get all visit IDs for this user
+        const visits = await tx.visit.findMany({
+          where: { userId: input.userId },
+          select: { id: true },
+        });
+        const visitIds = visits.map((v) => v.id);
+
+        if (visitIds.length > 0) {
+          // 2. Delete related Feedback
+          await tx.feedback.deleteMany({
+            where: { visitId: { in: visitIds } },
+          });
+
+          // 3. Delete related Photos
+          await tx.photo.deleteMany({
+            where: { visitId: { in: visitIds } },
+          });
+        }
+
+        // 4. Delete all Visits
+        await tx.visit.deleteMany({
+          where: { userId: input.userId },
+        });
+
+        // 5. Delete all Requests
+        await tx.request.deleteMany({
+          where: { userId: input.userId },
+        });
+
+        // 6. Finally, delete the User
+        const deletedUser = await tx.user.delete({
+          where: { id: input.userId },
+        });
+
+        return deletedUser;
+      });
     }),
 
   submitFeedback: protectedProcedure

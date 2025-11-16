@@ -15,14 +15,34 @@ import { trpc } from "@/lib/trpc/client";
 import { useRouter } from "next/navigation";
 import { Loader2, CheckCircle } from "lucide-react";
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+
 interface RequestCardProps {
   request: Pick<
     Request,
     "id" | "title" | "description" | "photoUrl" | "createdAt" | "resolvedBy"
   >;
+  isEditMode?: boolean;
+  isDeleting?: boolean;
+  onDelete?: () => void;
 }
 
-export function RequestCard({ request }: RequestCardProps) {
+export function RequestCard({
+  request,
+  isEditMode,
+  isDeleting,
+  onDelete,
+}: RequestCardProps) {
   const router = useRouter();
   // NEW: Set up the transition state
   const [isRefreshing, startTransition] = useTransition();
@@ -39,8 +59,7 @@ export function RequestCard({ request }: RequestCardProps) {
     },
   });
 
-  // NEW: Combine both loading states
-  const isLoading = resolveRequest.isPending || isRefreshing;
+  const isLoadingResolve = resolveRequest.isPending || isRefreshing;
 
   return (
     <Card key={request.id} className="shadow-lg">
@@ -75,7 +94,8 @@ export function RequestCard({ request }: RequestCardProps) {
         )}
       </CardContent>
 
-      <CardFooter>
+      <CardFooter className="flex flex-col gap-4 items-start">
+        {/* --- Resolve Section (Always Visible) --- */}
         {request.resolvedBy ? (
           <div className="flex items-center gap-2 text-green-400">
             <CheckCircle className="h-4 w-4" />
@@ -88,13 +108,50 @@ export function RequestCard({ request }: RequestCardProps) {
             variant="outline"
             size="sm"
             onClick={() => resolveRequest.mutate({ requestId: request.id })}
-            // MODIFIED: Use the combined isLoading state
-            disabled={isLoading}
+            disabled={isLoadingResolve}
+            className="w-full" // Make button full width
           >
-            {/* MODIFIED: Use the combined isLoading state */}
-            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isLoadingResolve && (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            )}
             Mark as resolved
           </Button>
+        )}
+
+        {/* --- Delete Section (Conditional) --- */}
+        {isEditMode && (
+          <div className="w-full pt-4 border-t border-gray-700">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="destructive"
+                  className="w-full"
+                  disabled={isDeleting}
+                >
+                  {isDeleting ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    "Delete Request"
+                  )}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will permanently delete the request: {request.title}.
+                    This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={onDelete}>
+                    Continue
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
         )}
       </CardFooter>
     </Card>

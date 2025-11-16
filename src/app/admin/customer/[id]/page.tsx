@@ -73,6 +73,16 @@ export default function CustomerTimeline() {
     },
   });
 
+  const deleteRequest = trpc.deleteRequest.useMutation({
+    onSuccess: () => {
+      toast.success("Request deleted successfully.");
+      utils.getRequestsByCustomer.invalidate({ customerId: id });
+    },
+    onError: (err) => {
+      toast.error("Failed to delete request", { description: err.message });
+    },
+  });
+
   // MODIFIED: Show loading state if *any* query is fetching
   if (isLoadingVisits || isLoadingCustomer || isLoadingRequests) {
     return (
@@ -81,6 +91,10 @@ export default function CustomerTimeline() {
       </div>
     );
   }
+
+  const deletingRequestId = deleteRequest.isPending
+    ? deleteRequest.variables?.requestId
+    : null;
 
   return (
     // Apply dark theme wrapper
@@ -255,14 +269,29 @@ export default function CustomerTimeline() {
             </div>
           </TabsContent>
 
-          {/* --- NEW REQUESTS TAB CONTENT --- */}
+          {/* --- REQUESTS TAB CONTENT --- */}
           <TabsContent value="requests">
+            <div className="flex items-center justify-end space-x-2 my-4">
+              <Label htmlFor="edit-mode" className="text-white">
+                Edit Mode
+              </Label>
+              <Switch
+                id="edit-mode"
+                checked={isEditMode}
+                onCheckedChange={setIsEditMode}
+              />
+            </div>
             <div className="space-y-8 mt-4">
               {requests?.map((req) => (
-                <RequestCard key={req.id} request={req} />
+                <RequestCard
+                  key={req.id}
+                  request={req}
+                  isEditMode={isEditMode}
+                  isDeleting={deletingRequestId === req.id}
+                  onDelete={() => deleteRequest.mutate({ requestId: req.id })}
+                />
               ))}
 
-              {/* Empty state for requests */}
               {requests?.length === 0 && (
                 <Card className="shadow-xl">
                   <CardContent>

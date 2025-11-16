@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import type { AppRouter } from "@/lib/trpc/server";
 import type { inferRouterOutputs } from "@trpc/server";
+import { useSession } from "next-auth/react";
 
 // Import all the UI components
 import {
@@ -35,6 +36,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 // This is the type inferred from our new tRPC procedure
 type RouterOutputs = inferRouterOutputs<AppRouter>;
@@ -42,6 +54,7 @@ type UserForEdit = NonNullable<RouterOutputs["listAllUsers"]>[number];
 
 export default function EditUserPage() {
   const router = useRouter();
+  const { data: session } = useSession();
 
   // State for the form
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
@@ -75,6 +88,18 @@ export default function EditUserPage() {
       setError(err.message);
       // You could also show an error toast here
       // toast.error(err.message);
+    },
+  });
+
+  const deleteUser = trpc.deleteUser.useMutation({
+    onSuccess: (deletedUser) => {
+      toast.success(`User deleted: ${deletedUser.name}`, {
+        description: "All their data has been permanently removed.",
+      });
+      router.push("/admin/dashboard");
+    },
+    onError: (err) => {
+      setError(err.message);
     },
   });
 
@@ -256,7 +281,9 @@ export default function EditUserPage() {
           <Button
             type="button"
             className="w-full"
-            disabled={!selectedUserId || updateUser.isPending}
+            disabled={
+              !selectedUserId || updateUser.isPending || deleteUser.isPending // Disable while deleting
+            }
             onClick={handleSubmit}
           >
             {updateUser.isPending ? (
@@ -268,7 +295,53 @@ export default function EditUserPage() {
             )}
           </Button>
 
-          {/* Show error or success messages */}
+          {/* --- NEW DELETE BUTTON --- */}
+          {/* Only show if a user is selected AND it's not the current admin */}
+          {selectedUserId && session?.user?.id !== selectedUserId && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  className="w-full"
+                  disabled={updateUser.isPending || deleteUser.isPending}
+                >
+                  {deleteUser.isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />{" "}
+                      Deleting...
+                    </>
+                  ) : (
+                    "Delete User"
+                  )}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This action cannot be undone. This will permanently delete
+                    the user <strong className="text-black">{name}</strong> and
+                    all their associated data, including visits, requests, and
+                    photos.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() =>
+                      deleteUser.mutate({ userId: selectedUserId! })
+                    }
+                    disabled={deleteUser.isPending}
+                  >
+                    Continue
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
+
+          {/* Show error message if one exists */}
           {error && <p className="text-red-600">{error}</p>}
         </CardFooter>
       </Card>
