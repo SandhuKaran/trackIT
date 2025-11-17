@@ -31,9 +31,11 @@ export default async function Timeline() {
     // Wrapper div
     <div className="min-h-screen bg-black text-white dark">
       <main className="p-4 max-w-lg m-auto">
-        <h1 className="text-2xl font-semibold mb-6 text-center pt-6">
+        <h1 className="text-2xl font-semibold text-center pt-6 mb-3">
           Your Account
         </h1>
+        <p className="text-center text-gray-400 mb-1">{session.user.name}</p>
+        <p className="text-center text-gray-400 mb-6">{session.user.email}</p>
 
         {/* --- TABS WRAPPER --- */}
         <Tabs defaultValue="visits" className="w-full">
