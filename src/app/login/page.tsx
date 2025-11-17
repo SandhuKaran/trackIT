@@ -49,7 +49,9 @@ export default function LoginPage() {
     <div className="flex pt-12 flex-col items-center bg-black text-white dark p-4">
       <div className="text-center mb-6">
         <h1 className="text-3xl font-semibold mb-2">Welcome</h1>
-        <p className="text-lg text-gray-400">Access all your visits and more</p>
+        <p className="text-lg text-gray-400">
+          Track visitis, request work and share feedback
+        </p>
       </div>
       <Card className="w-full max-w-md shadow-xl">
         <CardHeader className="space-y-1">
