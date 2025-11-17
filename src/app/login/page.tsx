@@ -22,7 +22,7 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
 
   async function handle(formData: FormData) {
-    const email = formData.get("email") as string;
+    const email = (formData.get("email") as string).toLowerCase();
     const password = formData.get("password") as string;
 
     setError(null); // Clear any old errors

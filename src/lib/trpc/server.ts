@@ -301,9 +301,10 @@ export const appRouter = router({
       })
     )
     .mutation(async ({ input, ctx }) => {
-      // 1. Check if user already exists (unchanged)
+      const lowerEmail = input.email.toLowerCase();
+      // 1. Check if user already exists
       const existingUser = await ctx.prisma.user.findUnique({
-        where: { email: input.email },
+        where: { email: lowerEmail },
       });
 
       if (existingUser) {
@@ -320,7 +321,7 @@ export const appRouter = router({
       const newUser = await ctx.prisma.user.create({
         data: {
           name: input.name,
-          email: input.email,
+          email: lowerEmail,
           password: hashedPassword,
           role: input.role,
           address: input.address,
@@ -346,10 +347,11 @@ export const appRouter = router({
       })
     )
     .mutation(async ({ input, ctx }) => {
+      const lowerEmail = input.email.toLowerCase();
       // 1. Check for email conflict
       // See if a *different* user already has this email
       const existingUser = await ctx.prisma.user.findUnique({
-        where: { email: input.email },
+        where: { email: lowerEmail },
       });
 
       if (existingUser && existingUser.id !== input.userId) {
@@ -370,7 +372,7 @@ export const appRouter = router({
         where: { id: input.userId },
         data: {
           name: input.name,
-          email: input.email,
+          email: lowerEmail,
           address: input.address,
           role: input.role,
           // This will only update the password if hashedPassword is not undefined
