@@ -50,7 +50,7 @@ export default function LoginPage() {
       <div className="text-center mb-6">
         <h1 className="text-3xl font-semibold mb-2">Welcome</h1>
         <p className="text-lg text-gray-400">
-          Track visitis, request work and share feedback
+          Track visits, request work and share feedback
         </p>
       </div>
       <Card className="w-full max-w-md shadow-xl">
