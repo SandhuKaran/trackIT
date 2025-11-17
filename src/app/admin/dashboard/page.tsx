@@ -1,15 +1,31 @@
 "use client";
 import { trpc } from "@/lib/trpc/client";
 import Link from "next/link";
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { Loader2, Search, CheckCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { cn } from "@/lib/utils";
 
 // Import all our shadcn components
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+
+const RedDot = () => (
+  <div className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-red-600" />
+);
+
+// Define the shape of our stored counts
+interface ViewedCounts {
+  feedback: number;
+  requests: number;
+}
+
+// Key for localStorage
+const VIEWED_COUNTS_KEY = "trackit-viewed-counts";
 
 export default function Dashboard() {
   const router = useRouter();
@@ -19,15 +35,65 @@ export default function Dashboard() {
     trpc.getRecentFeedbacks.useQuery();
   const { data: requests, isLoading: isLoadingRequests } =
     trpc.getRecentRequests.useQuery();
+
+  const { data: dbCounts, isLoading: isLoadingCounts } =
+    trpc.getNotificationCounts.useQuery(undefined, {
+      refetchInterval: 60000,
+    });
+
+  const [lastViewedCounts, setLastViewedCounts] = useState<ViewedCounts>(() => {
+    // This function runs only on the client, on first load
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem(VIEWED_COUNTS_KEY);
+      if (stored) {
+        return JSON.parse(stored);
+      }
+    }
+    return { feedback: 0, requests: 0 };
+  });
+
   const [searchTerm, setSearchTerm] = useState("");
   const [isRefreshing, startTransition] = useTransition();
   const utils = trpc.useUtils();
+
+  useEffect(() => {
+    localStorage.setItem(VIEWED_COUNTS_KEY, JSON.stringify(lastViewedCounts));
+  }, [lastViewedCounts]);
+
+  // 5. Calculate if new items exist
+  const newFeedbackCount = dbCounts
+    ? dbCounts.feedbackCount - lastViewedCounts.feedback
+    : 0;
+  const newRequestCount = dbCounts
+    ? dbCounts.requestCount - lastViewedCounts.requests
+    : 0;
 
   const resolveRequest = trpc.resolveRequest.useMutation({
     onSuccess: () => {
       startTransition(() => {
         utils.getRecentRequests.invalidate();
+        utils.getNotificationCounts.invalidate();
+        // Update lastViewedCounts when resolving
+        setLastViewedCounts((prev) => ({
+          ...prev,
+          requests: prev.requests > 0 ? prev.requests - 1 : 0,
+        }));
         router.refresh();
+      });
+    },
+  });
+
+  const toggleRecognized = trpc.toggleFeedbackRecognized.useMutation({
+    onSuccess: (updatedFeedback) => {
+      utils.getRecentFeedbacks.invalidate();
+      utils.getNotificationCounts.invalidate();
+      // Update lastViewedCounts when recognizing
+      setLastViewedCounts((prev) => {
+        const adjustment = updatedFeedback.recognized ? -1 : 1;
+        return {
+          ...prev,
+          feedback: Math.max(0, prev.feedback + adjustment),
+        };
       });
     },
   });
@@ -39,7 +105,12 @@ export default function Dashboard() {
       c.address?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  if (isLoadingCustomers || isLoadingFeedbacks || isLoadingRequests) {
+  if (
+    isLoadingCustomers ||
+    isLoadingFeedbacks ||
+    isLoadingRequests ||
+    isLoadingCounts
+  ) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-black text-white dark p-4">
         <Loader2 className="h-8 w-8 animate-spin" />
@@ -48,6 +119,20 @@ export default function Dashboard() {
   }
 
   const isResolving = resolveRequest.isPending || isRefreshing;
+
+  const handleTabChange = (tabValue: string) => {
+    if (tabValue === "feedback" && dbCounts) {
+      setLastViewedCounts((prev) => ({
+        ...prev,
+        feedback: dbCounts.feedbackCount,
+      }));
+    } else if (tabValue === "requests" && dbCounts) {
+      setLastViewedCounts((prev) => ({
+        ...prev,
+        requests: dbCounts.requestCount,
+      }));
+    }
+  };
 
   return (
     <div className="min-h-screen bg-black text-white dark">
@@ -67,16 +152,22 @@ export default function Dashboard() {
         </div>
 
         {/* --- TABS WRAPPER --- */}
-        <Tabs defaultValue="customers" className="w-full mt-8">
+        <Tabs
+          defaultValue="customers"
+          className="w-full mt-8"
+          onValueChange={handleTabChange}
+        >
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="customers">
               Customers ({filteredCustomers?.length ?? 0})
             </TabsTrigger>
-            <TabsTrigger value="feedback">
+            <TabsTrigger value="feedback" className="relative">
               Feedback ({feedbacks?.length ?? 0})
+              {newFeedbackCount > 0 && <RedDot />}
             </TabsTrigger>
-            <TabsTrigger value="requests">
+            <TabsTrigger value="requests" className="relative">
               Requests ({requests?.length ?? 0})
+              {newRequestCount > 0 && <RedDot />}
             </TabsTrigger>
           </TabsList>
 
@@ -144,53 +235,99 @@ export default function Dashboard() {
           <TabsContent value="feedback">
             <div className="space-y-8 mt-4">
               {feedbacks?.map((fb) => (
-                <Link
-                  href={`/admin/customer/${fb.visit.userId}`}
-                  key={fb.id}
-                  className="block"
-                >
-                  <Card className="shadow-xl hover:bg-gray-900 transition-colors">
-                    <CardContent className="p-4">
-                      <p className="italic text-gray-200">{fb.text}</p>
-                      {fb.photoUrl && (
-                        <img
-                          src={fb.photoUrl.replace(
-                            "/upload/",
-                            "/upload/w_100,c_fill/"
-                          )}
-                          alt="Feedback photo"
-                          className="w-full h-auto object-cover rounded-md mt-2"
-                        />
+                <div key={fb.id}>
+                  {/* The Link still wraps the entire card */}
+                  <Link
+                    href={`/admin/customer/${fb.visit.userId}`}
+                    className="block"
+                  >
+                    <Card
+                      className={cn(
+                        "shadow-xl hover:bg-gray-900 transition-colors",
+                        fb.recognized && "opacity-60" // "Dull" effect
                       )}
-                      <div className="mt-4 pt-3 border-t border-gray-700">
-                        <span className="font-semibold text-white text-sm">
-                          - {fb.visit.user.name}{" "}
-                          <span className="text-gray-400 font-normal">
-                            ({fb.visit.user.address})
+                    >
+                      <CardContent className="p-4 relative">
+                        <div
+                          className="absolute top-4 right-4 flex items-center space-x-2 z-10"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                          }}
+                        >
+                          <Checkbox
+                            id={`rec-${fb.id}`}
+                            checked={fb.recognized}
+                            disabled={toggleRecognized.isPending}
+                            onCheckedChange={(checked) => {
+                              toggleRecognized.mutate({
+                                feedbackId: fb.id,
+                                recognized: !!checked, // Convert to boolean
+                              });
+                            }}
+                          />
+                          <Label
+                            htmlFor={`rec-${fb.id}`}
+                            className="text-sm text-gray-300"
+                          >
+                            Recognized
+                          </Label>
+                        </div>
+                        {/* --- END CHECKBOX --- */}
+
+                        {/* --- Card Content --- */}
+                        {/* Added top padding to make space for the checkbox */}
+                        <p className="italic text-gray-200 pt-8">{fb.text}</p>
+                        {fb.photoUrl && (
+                          <img
+                            src={fb.photoUrl.replace(
+                              "/upload/",
+                              "/upload/w_100,c_fill/"
+                            )}
+                            alt="Feedback photo"
+                            className="w-full h-auto object-cover rounded-md mt-2"
+                          />
+                        )}
+                        <div className="mt-4 pt-3 border-t border-gray-700">
+                          <span className="font-semibold text-white text-sm">
+                            - {fb.visit.user.name}{" "}
+                            <span className="text-gray-400 font-normal">
+                              ({fb.visit.user.address})
+                            </span>
                           </span>
-                        </span>
-                      </div>
-                      <div className="mt-2 flex flex-col text-xs text-gray-400">
-                        <span>
-                          Submitted:{" "}
-                          {new Intl.DateTimeFormat("en-CA", {
-                            dateStyle: "medium",
-                            timeStyle: "short",
-                          }).format(new Date(fb.createdAt))}
-                        </span>
-                        <span className="mt-1">
-                          Visited:{" "}
-                          {new Intl.DateTimeFormat("en-CA", {
-                            dateStyle: "medium",
-                            timeStyle: "short",
-                          }).format(new Date(fb.visit.date))}
-                        </span>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
+                        </div>
+                        <div className="mt-2 flex flex-col text-xs text-gray-400">
+                          <span>
+                            Submitted:{" "}
+                            {new Intl.DateTimeFormat("en-CA", {
+                              dateStyle: "medium",
+                              timeStyle: "short",
+                            }).format(new Date(fb.createdAt))}
+                          </span>
+                          <span className="mt-1">
+                            Visited:{" "}
+                            {new Intl.DateTimeFormat("en-CA", {
+                              dateStyle: "medium",
+                            }).format(new Date(fb.visit.date))}
+                          </span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                  {/* The checkbox div was MOVED from here to inside the card */}
+                </div>
               ))}
-              {/* ... (empty state) ... */}
+
+              {/* Empty state for feedback */}
+              {feedbacks?.length === 0 && (
+                <Card>
+                  <CardContent>
+                    <p className="pt-6 text-center text-gray-400">
+                      No recent feedback.
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           </TabsContent>
 

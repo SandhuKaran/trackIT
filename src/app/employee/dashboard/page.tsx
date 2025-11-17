@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, useTransition } from "react";
 import { Loader2, Search, CheckCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { cn } from "@/lib/utils";
 
 // Import all our shadcn components
 import { Card, CardContent } from "@/components/ui/card";
@@ -140,15 +141,20 @@ export default function Dashboard() {
           {/* --- TAB 2: FEEDBACK --- */}
           <TabsContent value="feedback">
             <div className="space-y-8 mt-4">
-              {/* Note: The H2 "Recent Feedback" is removed as the tab provides context */}
               {feedbacks?.map((fb) => (
                 <Link
                   href={`/employee/customer/${fb.visit.userId}`}
                   key={fb.id}
                   className="block"
                 >
-                  <Card className="shadow-xl hover:bg-gray-900 transition-colors">
+                  <Card
+                    className={cn(
+                      "shadow-xl hover:bg-gray-900 transition-colors",
+                      fb.recognized && "opacity-60"
+                    )}
+                  >
                     <CardContent className="p-4">
+                      {/* --- Card Content (layout updated for consistency) --- */}
                       <p className="italic text-gray-200">{fb.text}</p>
                       {fb.photoUrl && (
                         <img
@@ -160,14 +166,24 @@ export default function Dashboard() {
                           className="w-full h-auto object-cover rounded-md mt-2"
                         />
                       )}
-                      <div className="flex justify-between items-center mt-3 text-sm">
-                        <span className="font-semibold text-white">
+                      <div className="mt-4 pt-3 border-t border-gray-700">
+                        <span className="font-semibold text-white text-sm">
                           - {fb.visit.user.name}{" "}
                           <span className="text-gray-400 font-normal">
                             ({fb.visit.user.address})
                           </span>
                         </span>
-                        <span className="text-gray-400">
+                      </div>
+                      <div className="mt-2 flex flex-col text-xs text-gray-400">
+                        <span>
+                          Submitted:{" "}
+                          {new Intl.DateTimeFormat("en-CA", {
+                            dateStyle: "medium",
+                            timeStyle: "short",
+                          }).format(new Date(fb.createdAt))}
+                        </span>
+                        <span className="mt-1">
+                          Visited:{" "}
                           {new Intl.DateTimeFormat("en-CA", {
                             dateStyle: "medium",
                           }).format(new Date(fb.visit.date))}

@@ -432,6 +432,35 @@ export const appRouter = router({
       });
     }),
 
+  getNotificationCounts: adminProcedure.query(async ({ ctx }) => {
+    const [feedbackCount, requestCount] = await ctx.prisma.$transaction([
+      ctx.prisma.feedback.count({
+        where: { recognized: false },
+      }),
+      ctx.prisma.request.count({
+        where: { resolvedBy: null },
+      }),
+    ]);
+
+    return { feedbackCount, requestCount };
+  }),
+
+  toggleFeedbackRecognized: adminProcedure
+    .input(
+      z.object({
+        feedbackId: z.string().cuid(),
+        recognized: z.boolean(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      return ctx.prisma.feedback.update({
+        where: { id: input.feedbackId },
+        data: {
+          recognized: input.recognized,
+        },
+      });
+    }),
+
   submitFeedback: protectedProcedure
     .input(
       z.object({

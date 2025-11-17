@@ -63,6 +63,7 @@ model Feedback {
   createdAt DateTime @default(now()) // For sorting by submission time!
   text      String
   photoUrl  String?
+  recognized Boolean  @default(false)
 
   // This creates the one-to-one relation
   visit   Visit  @relation(fields: [visitId], references: [id])
