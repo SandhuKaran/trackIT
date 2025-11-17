@@ -12,6 +12,7 @@ interface SendVisitNotificationArgs {
     email: string | null;
   };
   visitId: string;
+  note: string;
 }
 
 /**
@@ -21,6 +22,7 @@ interface SendVisitNotificationArgs {
 export async function sendVisitNotification({
   user,
   visitId,
+  note,
 }: SendVisitNotificationArgs) {
   // 1. Validate inputs
   if (!user.email || !user.name) {
@@ -34,12 +36,12 @@ export async function sendVisitNotification({
     // 2. Render the React component to HTML (Async for React 19)
     // This is the only module that bundles React dependencies.
     const emailHtml = await render(
-      <VisitEmailTemplate customerName={user.name} />
+      <VisitEmailTemplate customerName={user.name} visitNote={note} />
     );
 
     // 3. Send the email
     await resend.emails.send({
-      from: "GNW Landscaping <info@gnwlandscaping.ca>",
+      from: "Greenworks Landscaping <info@gnwlandscaping.ca>",
       to: user.email,
       subject: "We've completed your recent service!",
       html: emailHtml,

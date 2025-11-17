@@ -171,6 +171,7 @@ export const appRouter = router({
       sendVisitNotification({
         user: newVisit.user,
         visitId: newVisit.id,
+        note: newVisit.note,
       });
 
       // 3. Return the new visit data to the client

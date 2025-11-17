@@ -1,8 +1,20 @@
 // src/app/layout.tsx
+import type { Metadata } from "next";
 import TRPCProvider from "@/components/TRPCProvider";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 import Image from "next/image";
+
+export const metadata: Metadata = {
+  title: "Track My Lawn",
+  description:
+    "Access all your landscaping visits, service requests, and feedback.",
+  openGraph: {
+    title: "Track My Lawn",
+    description:
+      "Access all your landscaping visits, service requests, and feedback.",
+  },
+};
 
 export default function RootLayout({
   children,
@@ -20,7 +32,7 @@ export default function RootLayout({
             <header className="flex justify-center pt-10">
               <Image
                 src="/logo.png"
-                alt="GNW Landscaping Logo"
+                alt="Greenworks Landscaping Logo"
                 width={120}
                 height={100}
                 className="rounded-sm"
