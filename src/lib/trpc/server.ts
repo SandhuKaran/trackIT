@@ -87,6 +87,13 @@ export const appRouter = router({
     })
   ),
 
+  listEmployees: adminProcedure.query(({ ctx }) =>
+    ctx.prisma.user.findMany({
+      where: { role: "EMPLOYEE" },
+      select: { id: true, email: true, name: true, address: true },
+    })
+  ),
+
   visitsByCustomer: staffProcedure
     .input(z.object({ customerId: z.string() }))
     .query(({ input, ctx }) =>
@@ -108,6 +115,46 @@ export const appRouter = router({
         select: { id: true, email: true, name: true, address: true }, // Only return the data we need
       })
     ),
+
+  employeeById: adminProcedure
+    .input(z.object({ id: z.string() }))
+    .query(({ input, ctx }) =>
+      ctx.prisma.user.findUnique({
+        where: { id: input.id, role: "EMPLOYEE" },
+        select: { id: true, email: true, name: true, address: true },
+      })
+    ),
+
+  visitsByEmployee: adminProcedure
+    .input(z.object({ employeeId: z.string().cuid() }))
+    .query(async ({ input, ctx }) => {
+      // Find the employee to get their name
+      const employee = await ctx.prisma.user.findUnique({
+        where: { id: input.employeeId },
+        select: { name: true },
+      });
+
+      if (!employee || !employee.name) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Employee not found.",
+        });
+      }
+
+      // Find all visits signed by that employee's name
+      return ctx.prisma.visit.findMany({
+        where: { signedBy: employee.name },
+        orderBy: { date: "desc" },
+        include: {
+          feedback: true,
+          photos: true,
+          // We include the user (customer) to show who the visit was for
+          user: {
+            select: { name: true, address: true },
+          },
+        },
+      });
+    }),
 
   getVisitById: adminProcedure
     .input(z.object({ visitId: z.string().cuid() }))

@@ -31,6 +31,8 @@ export default function Dashboard() {
   const router = useRouter();
   const { data: customers, isLoading: isLoadingCustomers } =
     trpc.listCustomers.useQuery();
+  const { data: employees, isLoading: isLoadingEmployees } =
+    trpc.listEmployees.useQuery();
   const { data: feedbacks, isLoading: isLoadingFeedbacks } =
     trpc.getRecentFeedbacks.useQuery();
   const { data: requests, isLoading: isLoadingRequests } =
@@ -52,7 +54,8 @@ export default function Dashboard() {
     return { feedback: 0, requests: 0 };
   });
 
-  const [searchTerm, setSearchTerm] = useState("");
+  const [customerSearchTerm, setCustomerSearchTerm] = useState("");
+  const [employeeSearchTerm, setEmployeeSearchTerm] = useState("");
   const [isRefreshing, startTransition] = useTransition();
   const utils = trpc.useUtils();
 
@@ -60,7 +63,7 @@ export default function Dashboard() {
     localStorage.setItem(VIEWED_COUNTS_KEY, JSON.stringify(lastViewedCounts));
   }, [lastViewedCounts]);
 
-  // 5. Calculate if new items exist
+  // Calculate if new items exist
   const newFeedbackCount = dbCounts
     ? dbCounts.feedbackCount - lastViewedCounts.feedback
     : 0;
@@ -100,13 +103,21 @@ export default function Dashboard() {
 
   const filteredCustomers = customers?.filter(
     (c) =>
-      c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.address?.toLowerCase().includes(searchTerm.toLowerCase())
+      c.name.toLowerCase().includes(customerSearchTerm.toLowerCase()) ||
+      c.email.toLowerCase().includes(customerSearchTerm.toLowerCase()) ||
+      c.address?.toLowerCase().includes(customerSearchTerm.toLowerCase())
+  );
+
+  const filteredEmployees = employees?.filter(
+    (e) =>
+      e.name.toLowerCase().includes(employeeSearchTerm.toLowerCase()) ||
+      e.email.toLowerCase().includes(employeeSearchTerm.toLowerCase()) ||
+      e.address?.toLowerCase().includes(employeeSearchTerm.toLowerCase())
   );
 
   if (
     isLoadingCustomers ||
+    isLoadingEmployees ||
     isLoadingFeedbacks ||
     isLoadingRequests ||
     isLoadingCounts
@@ -157,9 +168,12 @@ export default function Dashboard() {
           className="w-full mt-8"
           onValueChange={handleTabChange}
         >
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="customers">
               Customers ({filteredCustomers?.length ?? 0})
+            </TabsTrigger>
+            <TabsTrigger value="employees">
+              Employees ({filteredEmployees?.length ?? 0})
             </TabsTrigger>
             <TabsTrigger value="feedback" className="relative">
               Feedback ({feedbacks?.length ?? 0})
@@ -194,8 +208,8 @@ export default function Dashboard() {
                   type="search"
                   placeholder="Search by name, email, or address..."
                   className="pl-10"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  value={customerSearchTerm}
+                  onChange={(e) => setCustomerSearchTerm(e.target.value)}
                 />
               </div>
 
@@ -223,6 +237,54 @@ export default function Dashboard() {
                     <CardContent>
                       <p className="pt-6 text-center text-gray-400">
                         No customers found.
+                      </p>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="employees">
+            <div className="mt-4">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold">Employees</h2>
+              </div>
+              {/* Search Input */}
+              <div className="relative mb-4">
+                <Search className="absolute left-2.5 top-2.5 h-5 w-5 text-gray-400" />
+                <Input
+                  type="search"
+                  placeholder="Search by name or email..."
+                  className="pl-10"
+                  value={employeeSearchTerm} // 👈 USE EMPLOYEE STATE
+                  onChange={(e) => setEmployeeSearchTerm(e.target.value)}
+                />
+              </div>
+
+              {/* Employee List */}
+              <div className="space-y-4">
+                {filteredEmployees?.map((e) => (
+                  <Card key={e.id} className="shadow-xl">
+                    <CardContent className="p-4 flex justify-between items-center">
+                      <div className="flex flex-col">
+                        <span className="font-medium">{e.name}</span>
+                        <span className="text-sm text-gray-400">
+                          {e.address}
+                        </span>
+                        <span className="text-sm text-gray-400">{e.email}</span>
+                      </div>
+                      <Button asChild variant="ghost" size="sm">
+                        <Link href={`/admin/employee/${e.id}`}>View</Link>
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))}
+                {filteredEmployees?.length === 0 && (
+                  <Card>
+                    <CardContent>
+                      <p className="pt-6 text-center text-gray-400">
+                        No employees found.
                       </p>
                     </CardContent>
                   </Card>
