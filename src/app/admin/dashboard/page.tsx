@@ -170,17 +170,17 @@ export default function Dashboard() {
         >
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="customers">
-              Customers ({filteredCustomers?.length ?? 0})
+              Customer ({filteredCustomers?.length ?? 0})
             </TabsTrigger>
             <TabsTrigger value="employees">
-              Employees ({filteredEmployees?.length ?? 0})
+              Employee ({filteredEmployees?.length ?? 0})
             </TabsTrigger>
             <TabsTrigger value="feedback" className="relative">
               Feedback ({feedbacks?.length ?? 0})
               {newFeedbackCount > 0 && <RedDot />}
             </TabsTrigger>
             <TabsTrigger value="requests" className="relative">
-              Requests ({requests?.length ?? 0})
+              Request ({requests?.length ?? 0})
               {newRequestCount > 0 && <RedDot />}
             </TabsTrigger>
           </TabsList>
