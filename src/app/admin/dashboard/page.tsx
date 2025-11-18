@@ -33,6 +33,8 @@ export default function Dashboard() {
     trpc.listCustomers.useQuery();
   const { data: employees, isLoading: isLoadingEmployees } =
     trpc.listEmployees.useQuery();
+  const { data: admins, isLoading: isLoadingAdmins } =
+    trpc.listAdmins.useQuery();
   const { data: feedbacks, isLoading: isLoadingFeedbacks } =
     trpc.getRecentFeedbacks.useQuery();
   const { data: requests, isLoading: isLoadingRequests } =
@@ -118,6 +120,7 @@ export default function Dashboard() {
   if (
     isLoadingCustomers ||
     isLoadingEmployees ||
+    isLoadingAdmins ||
     isLoadingFeedbacks ||
     isLoadingRequests ||
     isLoadingCounts
@@ -243,6 +246,32 @@ export default function Dashboard() {
           </TabsContent>
 
           <TabsContent value="employees">
+            <div className="mt-4 mb-8">
+              <h2 className="text-xl font-semibold mb-4">Admins</h2>
+              <div className="space-y-4">
+                {admins?.map((admin) => (
+                  <Card
+                    key={admin.id}
+                    className="shadow-xl border-l-4 border-l-green-500"
+                  >
+                    <CardContent className="p-4 flex justify-between items-center">
+                      <div className="flex flex-col">
+                        <span className="font-medium">{admin.name}</span>
+                        <span className="text-sm text-gray-400">
+                          {admin.email}
+                        </span>
+                      </div>
+                      <Button asChild variant="ghost" size="sm">
+                        <Link href={`/admin/employee/${admin.id}`}>View</Link>
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))}
+                {admins?.length === 0 && (
+                  <p className="text-center text-gray-400">No admins found.</p>
+                )}
+              </div>
+            </div>
             <div className="mt-4">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-semibold">Employees</h2>
@@ -254,7 +283,7 @@ export default function Dashboard() {
                   type="search"
                   placeholder="Search by name, email, or address..."
                   className="pl-10"
-                  value={employeeSearchTerm} // 👈 USE EMPLOYEE STATE
+                  value={employeeSearchTerm}
                   onChange={(e) => setEmployeeSearchTerm(e.target.value)}
                 />
               </div>

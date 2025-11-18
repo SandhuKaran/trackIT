@@ -94,6 +94,13 @@ export const appRouter = router({
     })
   ),
 
+  listAdmins: adminProcedure.query(({ ctx }) =>
+    ctx.prisma.user.findMany({
+      where: { role: "ADMIN" },
+      select: { id: true, email: true, name: true, address: true },
+    })
+  ),
+
   visitsByCustomer: staffProcedure
     .input(z.object({ customerId: z.string() }))
     .query(({ input, ctx }) =>
@@ -120,7 +127,7 @@ export const appRouter = router({
     .input(z.object({ id: z.string() }))
     .query(({ input, ctx }) =>
       ctx.prisma.user.findUnique({
-        where: { id: input.id, role: "EMPLOYEE" },
+        where: { id: input.id },
         select: { id: true, email: true, name: true, address: true },
       })
     ),
