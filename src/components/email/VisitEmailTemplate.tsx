@@ -34,7 +34,16 @@ export function VisitEmailTemplate({
         </pre>
       </div>
 
-      <p style={{ marginTop: "20px" }}>Thanks,</p>
+      <p style={{ marginTop: "20px" }}>
+        For more information, visit{" "}
+        <a
+          href="https://trackmylawn.com"
+          style={{ color: "#2563eb", textDecoration: "underline" }}
+        >
+          trackmylawn.com
+        </a>
+      </p>
+      <p>Thanks,</p>
       <p>Greenworks Landscaping Inc.</p>
     </div>
   );
