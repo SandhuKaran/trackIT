@@ -186,6 +186,7 @@ export default function Dashboard() {
                           Visited:{" "}
                           {new Intl.DateTimeFormat("en-CA", {
                             dateStyle: "medium",
+                            timeStyle: "short",
                           }).format(new Date(fb.visit.date))}
                         </span>
                       </div>

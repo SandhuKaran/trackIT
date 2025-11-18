@@ -255,7 +255,7 @@ export default function Dashboard() {
                 <Search className="absolute left-2.5 top-2.5 h-5 w-5 text-gray-400" />
                 <Input
                   type="search"
-                  placeholder="Search by name or email..."
+                  placeholder="Search by name, email, or address..."
                   className="pl-10"
                   value={employeeSearchTerm} // 👈 USE EMPLOYEE STATE
                   onChange={(e) => setEmployeeSearchTerm(e.target.value)}
@@ -370,6 +370,7 @@ export default function Dashboard() {
                             Visited:{" "}
                             {new Intl.DateTimeFormat("en-CA", {
                               dateStyle: "medium",
+                              timeStyle: "short",
                             }).format(new Date(fb.visit.date))}
                           </span>
                         </div>
