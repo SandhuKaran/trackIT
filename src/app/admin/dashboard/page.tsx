@@ -160,6 +160,12 @@ export default function Dashboard() {
           <Button asChild variant="outline" className="w-full">
             <Link href="/admin/date">View by Date</Link>
           </Button>
+          <Button asChild variant="outline" className="w-full">
+            <Link href="/admin/edit-user">Edit User</Link>
+          </Button>
+          <Button asChild className="w-full">
+            <Link href="/admin/add-customer">+ Add User</Link>
+          </Button>
         </div>
 
         {/* --- TABS WRAPPER --- */}
@@ -190,15 +196,6 @@ export default function Dashboard() {
             <div className="mt-4">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-semibold">Customers</h2>
-                {/* Wrapper for the buttons */}
-                <div className="flex gap-2">
-                  <Button asChild size="sm" variant="outline">
-                    <Link href="/admin/edit-user">Edit User</Link>
-                  </Button>
-                  <Button asChild size="sm">
-                    <Link href="/admin/add-customer">+ Add User</Link>
-                  </Button>
-                </div>
               </div>
 
               {/* Search Input */}
