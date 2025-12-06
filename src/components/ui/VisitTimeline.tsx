@@ -13,7 +13,7 @@ import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "@/lib/trpc/server";
 type VisitFromTRPC = inferRouterOutputs<AppRouter>["getVisits"][number];
 
-// Define the props for our new component
+// Define the props
 interface VisitTimelineProps {
   visits: VisitFromTRPC[];
 }

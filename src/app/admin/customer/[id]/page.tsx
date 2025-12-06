@@ -145,19 +145,19 @@ export default function CustomerTimeline() {
                   <CardContent className="space-y-4">
                     <p className="whitespace-pre-wrap">{v.note}</p>
                     {v.photos && v.photos.length > 0 && (
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="columns-2 gap-2">
                         {v.photos.map((photo) => (
                           <a
                             key={photo.id}
                             href={photo.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="block rounded-md overflow-hidden"
+                            className="block rounded-md overflow-hidden mb-2 break-inside-avoid"
                           >
                             <img
                               src={photo.url.replace(
                                 "/upload/",
-                                "/upload/w_400,c_fill/"
+                                "/upload/w_400,c_limit/"
                               )}
                               alt="Visit photo"
                               className="w-full h-auto object-cover"

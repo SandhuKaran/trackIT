@@ -2,7 +2,6 @@
 import { trpc } from "@/lib/trpc/client";
 import { useParams } from "next/navigation";
 
-// Import Card components
 import {
   Card,
   CardContent,
@@ -10,7 +9,6 @@ import {
   CardHeader,
 } from "@/components/ui/card";
 
-// NEW: Import Tabs and RequestCard
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RequestCard } from "@/components/ui/RequestCard";
 
@@ -41,7 +39,7 @@ export default function CustomerTimeline() {
       customerId: id,
     });
 
-  // MODIFIED: Show loading state if *any* query is fetching
+  // Show loading state if *any* query is fetching
   if (isLoadingVisits || isLoadingCustomer || isLoadingRequests) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-black text-white dark p-4">
@@ -51,17 +49,16 @@ export default function CustomerTimeline() {
   }
 
   return (
-    // Apply dark theme wrapper
+    // dark theme wrapper
     <div className="min-h-screen bg-black text-white dark">
       <main className="p-4 max-w-lg m-auto">
-        {/* MODIFIED: Updated header to show name and email */}
         <h1 className="text-2xl font-semibold mb-2 text-center pt-6">
           {customer?.name ?? "Customer"}
         </h1>
         <p className="text-center text-gray-400 mb-1">{customer?.address}</p>
         <p className="text-center text-gray-400 mb-6">{customer?.email}</p>
 
-        {/* --- NEW TABS WRAPPER --- */}
+        {/* --- TABS WRAPPER --- */}
         <Tabs defaultValue="visits" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="visits">
@@ -72,7 +69,7 @@ export default function CustomerTimeline() {
             </TabsTrigger>
           </TabsList>
 
-          {/* --- VISITS TAB CONTENT (Original Code) --- */}
+          {/* --- VISITS TAB CONTENT --- */}
           <TabsContent value="visits">
             <div className="space-y-8 mt-4">
               {visits?.map((v) => (
@@ -93,19 +90,19 @@ export default function CustomerTimeline() {
                   <CardContent className="space-y-4">
                     <p className="whitespace-pre-wrap">{v.note}</p>
                     {v.photos && v.photos.length > 0 && (
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="columns-2 gap-2">
                         {v.photos.map((photo) => (
                           <a
                             key={photo.id}
                             href={photo.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="block rounded-md overflow-hidden"
+                            className="block rounded-md overflow-hidden mb-2 break-inside-avoid"
                           >
                             <img
                               src={photo.url.replace(
                                 "/upload/",
-                                "/upload/w_400,c_fill/"
+                                "/upload/w_400,c_limit/"
                               )}
                               alt="Visit photo"
                               className="w-full h-auto object-cover"
@@ -122,7 +119,6 @@ export default function CustomerTimeline() {
                         <p className="text-gray-300 italic">
                           {v.feedback.text}
                         </p>
-                        {/* This includes the feedback photo fix from our last feature */}
                         {v.feedback.photoUrl && (
                           <a
                             href={v.feedback.photoUrl}
@@ -159,7 +155,7 @@ export default function CustomerTimeline() {
             </div>
           </TabsContent>
 
-          {/* --- NEW REQUESTS TAB CONTENT --- */}
+          {/* --- REQUESTS TAB CONTENT --- */}
           <TabsContent value="requests">
             <div className="space-y-8 mt-4">
               {requests?.map((req) => (
